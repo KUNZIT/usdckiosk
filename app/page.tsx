@@ -175,24 +175,26 @@ export default function App() {
     setView('success');
     
     // 1. Play Audio
-    if (audioRef.current) {
+    const audioRef = useRef<HTMLAudioElement | null>(null);
 
+// 1. Define the Play Audio function (useCallback must be defined at the component's top level)
 const playAlert = useCallback(() => {
-  // 1. Check if the audio element has been initialized
-  if (!audioRef.current) {
-    // If the element doesn't exist yet, create it.
-    audioRef.current = new Audio('/alert.wav');
-    audioRef.current.volume = 0.5; // Optional: Set volume
-  }
-  
-  // 2. Safely play the audio
-  audioRef.current.play().catch(error => {
-    // Handle cases where the browser blocks autoplay (common)
-    console.error("Failed to play local audio:", error);      
-            });
-        }
+    // 1. Check if the audio element has been initialized
+    if (!audioRef.current) {
+        // If the element doesn't exist yet, create it. Path is relative to the public folder.
+        audioRef.current = new Audio('/alert.wav');
+        audioRef.current.volume = 0.5; // Optional: Set volume
     }
 
+    // 2. Safely play the audio
+    // We check audioRef.current again just for safety before playing
+    if (audioRef.current) {
+        audioRef.current.play().catch(error => {
+            // Handle cases where the browser blocks autoplay
+            console.error("Failed to play local audio:", error);
+        });
+    }
+}, []);
     // 2. Trigger Arduino
     triggerArduino();
   };
