@@ -1,5 +1,5 @@
 import { createWeb3Modal } from '@web3modal/wagmi/react';
-import { defaultWagmiConfig } from '@web3modal/wagmi/config';
+import { defaultWagmiConfig } from '@web3modal/wagmi';
 
 import { sepolia } from 'wagmi/chains';
 import { reconnect } from '@wagmi/core';
