@@ -24,7 +24,9 @@ const CONFIG = {
   AUDIO_SRC: "/sounds/success.mp3"
 };
 
-// **REMOVED:** ERC20_ABI is not needed for native ETH transfers.
+// Sepolia Chain ID constant
+const SEPOLIA_CHAIN_ID = 11155111;
+
 
 export default function App() {
   const [view, setView] = useState('landing'); // 'landing', 'payment', 'success'
@@ -164,7 +166,7 @@ export default function App() {
 
   // --- HELPER FOR QR (Modified for Native ETH) ---
   // Format: ethereum:MERCHANT_ADDRESS?value=0.001
-  const qrData = `ethereum:${CONFIG.MERCHANT_ADDRESS}?value=${CONFIG.REQUIRED_AMOUNT}&chainId=11155111`;
+  const qrData = `ethereum:${CONFIG.MERCHANT_ADDRESS}/send?value=${CONFIG.REQUIRED_AMOUNT_WEI}&chainId=${SEPOLIA_CHAIN_ID}`;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrData)}`;
 
   // --- RENDER HELPERS ---
