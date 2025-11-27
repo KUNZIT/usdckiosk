@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@coinbase/wallet-sdk": "^4.3.7",
     "@wagmi/core": "^3.0.0",
     "@web3modal/wagmi": "^5.1.11",
     "ethers": "^6.15.0",
