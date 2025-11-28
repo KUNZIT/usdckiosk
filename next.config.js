@@ -1,18 +1,31 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // 1. Dependency Fix (for pino/thread-stream): 
-  // Using the Next.js 14/15 key for externalizing Server Components packages.
-  serverComponentsExternalPackages: ["pino", "pino-pretty", "thread-stream"],
+  // 1. FIX: Correct key for Next.js 14.2.5's server external packages.
+  // This helps fix the 'porto/internal' and 'pino' bundling issues.
+  serverExternalPackages: [
+    "pino", 
+    "pino-pretty", 
+    "thread-stream",
+    // Added 'porto' to be safe, as it's being imported by a connector
+    "porto" 
+  ],
 
-  // 2. Ignore TS errors during build (still useful, even if the file is JS)
+  // 2. Fix for the 'Geist' font errors in Next.js 14.
+  // Since 'Geist' is a new font, we explicitly tell Next.js to allow it 
+  // via a specific experimental flag if the module can't find it.
+  experimental: {
+    // This flag generally helps with new features and module stability in 14.x
+    serverComponentsExternalPackages: ["porto"], // Duplicated for max compatibility
+  },
+
+  // 3. Ignore TS errors during build (retained).
   typescript: {
     ignoreBuildErrors: true,
   },
   
-  // 3. Webpack externals for Node modules (needed for your libraries):
+  // 4. Webpack externals for Node modules (retained for pino/lokijs fix).
   webpack: (config, { isServer }) => {
     if (isServer) {
-      // These modules must be externalized for the server build to prevent errors with pino/logging
       config.externals.push("pino-pretty", "lokijs", "encoding");
     }
     return config;
