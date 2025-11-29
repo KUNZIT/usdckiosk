@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers"; // 1. Import headers to read cookies
-import { cookieToInitialState } from "wagmi"; // 2. Helper to sync server/client state
+import { cookieToInitialState } from "./wagmi"; // 2. Helper to sync server/client state
 import { config } from "./wagmi"; // 3. Import your wagmi config
 import Web3Provider from "./context/Web3Provider"; // 4. Import the wrapper we created in Step 1
 
