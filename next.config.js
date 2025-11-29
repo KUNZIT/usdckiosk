@@ -18,30 +18,38 @@ const nextConfig = {
   // 3. Webpack externals and Aggressive Fixes (CRITICAL)
   webpack: (config, { isServer, webpack }) => {
     // EXPANDED LIST: This list forces Webpack to treat ALL missing, 
-    // optional wallet connector dependencies as external, which stops the "Module not found" error.
+    // optional wallet connector dependencies as external.
     config.externals = [
       ...(config.externals || []),
-      'porto', // Persistent Porto module
-      'porto/internal', // Explicitly add the internal path to externals just in case
+      'porto', 
+      'porto/internal', 
       '@base-org/account',
       '@gemini-wallet/core',
       '@metamask/sdk',
-      // NEW MISSING DEPENDENCIES ADDED:
       '@safe-global/safe-apps-sdk', 
-      '@safe-global/safe-apps-provider', 
+      '@safe-global/safe-apps-provider',
+      
+      // --- FIX FOR "Can't resolve 'ws'" ---
+      // 'ws' is a Node.js library for WebSockets. Next.js fails to bundle it 
+      // for the browser, so we must mark it as external.
+      'ws',
+      'bufferutil', 
+      'utf-8-validate', 
     ];
     
+    // Server-side specific ignores
     if (isServer) {
-      // Fixes for pino/lokijs/etc. in the server environment
       config.externals.push("pino-pretty", "lokijs", "encoding");
-
-      // AGGRESSIVE FIX: Ignore plugin for the 'porto/internal' import path
-      config.plugins.push(
-        new webpack.IgnorePlugin({
-          resourceRegExp: /^(porto\/internal)$/,
-        })
-      );
     }
+
+    // AGGRESSIVE FIX: Ignore plugin for the 'porto/internal' import path
+    // This handles deep imports that the 'externals' list sometimes misses
+    config.plugins.push(
+      new webpack.IgnorePlugin({
+        resourceRegExp: /^(porto\/internal)$/,
+      })
+    );
+    
     return config;
   },
 };
