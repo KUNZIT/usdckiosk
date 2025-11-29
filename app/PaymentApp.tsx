@@ -2,20 +2,14 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { CreditCard, Zap, RefreshCw, Activity, Lock } from 'lucide-react';
-// We still keep useWeb3Modal for network switching
-import { useWeb3Modal } from '@web3modal/wagmi/react'; 
-import { 
-  useAccount, 
-  useSendTransaction, 
-  useWaitForTransactionReceipt, 
-  useConnect 
-} from 'wagmi'; 
-import { parseEther } from 'viem';
+import { QRCodeSVG } from 'qrcode.react'; // <--- NEW LIBRARY
+import { useAccount, usePublicClient } from 'wagmi'; 
+import { parseEther, formatEther } from 'viem';
 import { sepolia } from 'wagmi/chains';
 
-
 const CONFIG = {
-    MERCHANT_ADDRESS: "0x35321cc55704948ee8c79f3c03cd0fcb055a3ac0",
+    // Ensure this address is lowercase for comparison logic
+    MERCHANT_ADDRESS: "0x35321cc55704948ee8c79f3c03cd0fcb055a3ac0".toLowerCase(),
     REQUIRED_AMOUNT: 0.001,
     INACTIVITY_LIMIT: 60000,
     AUDIO_SRC: "/sounds/success.mp3"
@@ -26,33 +20,20 @@ export default function PaymentApp() {
     const [status, setStatus] = useState('Idle');
     const [txHash, setTxHash] = useState('');
     
-    // NEW: State to prevent infinite connection loops
-    const [hasInitiatedConnection, setHasInitiatedConnection] = useState(false);
-    
+    // We track the block number when the user started the payment flow
+    // So we only look for transactions that happened AFTER they clicked "Pay"
+    const [startBlock, setStartBlock] = useState<bigint>(0n);
+
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-    // --- Wagmi Hooks ---
-    const { open } = useWeb3Modal();
-    const { address, isConnected, chainId } = useAccount();
-    
-    // Get connectors and the connect function
-    const { connect, connectors, error: connectError } = useConnect();
+    // Wagmi hook to read from blockchain
+    const publicClient = usePublicClient();
+    const { isConnected: isAppConnected } = useAccount(); // Only used for status check, not payment
 
-    // Convert ETH amount to Wei
-    const amountWei = parseEther(CONFIG.REQUIRED_AMOUNT.toString());
-
-    // Send Transaction Hook
-    const { data: sendTxData, sendTransaction, isPending: isTxPending } = useSendTransaction({
-        mutation: {
-             onError: (error) => setStatus(`Tx Failed: ${error.message.slice(0, 20)}...`)
-        }
-    });
-
-    // Wait for Receipt Hook
-    const { isSuccess: isTxConfirmed } = useWaitForTransactionReceipt({
-        hash: sendTxData?.hash,
-    });
+    // Create the Standard Payment URI (EIP-681)
+    // Format: ethereum:ADDRESS@CHAIN_ID?value=AMOUNT_IN_WEI
+    const paymentURI = `ethereum:${CONFIG.MERCHANT_ADDRESS}@${sepolia.id}?value=${parseEther(CONFIG.REQUIRED_AMOUNT.toString()).toString()}`;
 
     // --- Utility Functions ---
 
@@ -63,13 +44,12 @@ export default function PaymentApp() {
             setView('landing');
             setStatus('Idle');
             setTxHash('');
-            setHasInitiatedConnection(false); // Reset connection attempt flag
         }, CONFIG.INACTIVITY_LIMIT);
     }, []);
 
     const playSuccessSound = useCallback(() => {
         if (audioRef.current) {
-            audioRef.current.play().catch(error => console.error("Failed to play success audio:", error));
+            audioRef.current.play().catch(error => console.error("Failed to play audio:", error));
         }
     }, []);
 
@@ -79,92 +59,73 @@ export default function PaymentApp() {
         playSuccessSound();
     };
 
-    // --- Handle Connection/Transaction Flow ---
-
+    // --- The Watcher Logic (The Core "One Step" Magic) ---
     useEffect(() => {
-        if (view === 'payment') {
-            resetInactivityTimer();
+        let intervalId: NodeJS.Timeout;
 
-            // 1. Check Connection
-            if (!isConnected) {
-                
-                // Only try to connect if we haven't tried yet AND connectors are loaded
-                if (!hasInitiatedConnection && connectors.length > 0) {
-                    setStatus("Generating Secure QR Code...");
-                    
-                    const walletConnectConnector = connectors.find(c => c.id === 'walletConnect');
-                    
-                    if (walletConnectConnector) {
-                        setHasInitiatedConnection(true); // Mark as initiated so we don't loop
+        const checkRecentBlocks = async () => {
+            if (view !== 'payment' || !publicClient || startBlock === 0n) return;
+
+            try {
+                // 1. Get the latest block number
+                const currentBlock = await publicClient.getBlockNumber();
+
+                // 2. Only check if a new block has been mined since we started
+                if (currentBlock >= startBlock) {
+                    setStatus("Scanning blockchain for payment...");
+
+                    // 3. Get the full block with transactions
+                    const block = await publicClient.getBlock({ 
+                        blockNumber: currentBlock, 
+                        includeTransactions: true 
+                    });
+
+                    // 4. Look for our transaction in this block
+                    const foundTx = block.transactions.find((tx: any) => {
+                        // Check: Is it to our merchant?
+                        const isToMerchant = tx.to?.toLowerCase() === CONFIG.MERCHANT_ADDRESS;
+                        // Check: Is it the right amount? (Allow exact match or slightly higher)
+                        const isCorrectAmount = tx.value >= parseEther(CONFIG.REQUIRED_AMOUNT.toString());
                         
-                        connect({ connector: walletConnectConnector }, {
-                            onError: (err) => {
-                                console.error("Auto-connect failed:", err);
-                                setStatus("Please click button below");
-                            }
-                        });
-                    } else {
-                        // Fallback if WalletConnect connector not found
-                        console.warn("WalletConnect connector not found");
-                        setHasInitiatedConnection(true);
+                        return isToMerchant && isCorrectAmount;
+                    });
+
+                    if (foundTx) {
+                        setStatus("Payment Detected! Verifying...");
+                        handlePaymentSuccess(foundTx.hash);
                     }
                 }
-
-            } else if (chainId !== sepolia.id) {
-                setStatus("Wrong Network. Please switch to Sepolia.");
-                open({ view: 'Networks' }); 
-            } else {
-                setStatus(`Connected: ${address?.slice(0, 6)}...`);
-                
-                // 2. Wallet Connected and on Sepolia -> Send Transaction
-                if (!sendTxData && !isTxPending && !txHash) {
-                    setStatus("Please confirm on your phone...");
-                    
-                    sendTransaction({
-                        to: CONFIG.MERCHANT_ADDRESS as `0x${string}`,
-                        value: amountWei,
-                        chainId: sepolia.id
-                    });
-                } else if (isTxPending) {
-                    setStatus("Transaction pending...");
-                }
+            } catch (error) {
+                console.error("Error polling blockchain:", error);
             }
-        } else {
-            // Reset the flag if we leave the payment view
-            setHasInitiatedConnection(false);
-        }
-    }, [
-        view, 
-        isConnected, 
-        chainId, 
-        sendTxData, 
-        address, 
-        open, 
-        resetInactivityTimer, 
-        sendTransaction,
-        connect,
-        connectors,
-        isTxPending,
-        txHash,
-        amountWei,
-        hasInitiatedConnection // Added to dependency array
-    ]);
+        };
 
-    // --- Handle Confirmation ---
+        // Start polling when in payment view
+        if (view === 'payment') {
+            // Poll every 3 seconds (average block time varies, 3s is snappy enough)
+            intervalId = setInterval(checkRecentBlocks, 3000);
+        }
+
+        return () => clearInterval(intervalId);
+    }, [view, publicClient, startBlock]);
+
+
+    // Initialize the Start Block when entering payment view
     useEffect(() => {
-        if (isTxConfirmed && sendTxData) {
-            handlePaymentSuccess(sendTxData.hash);
+        if (view === 'payment' && publicClient) {
+            setStatus("Ready to scan");
+            publicClient.getBlockNumber().then(blockNum => {
+                setStartBlock(blockNum);
+            });
+            resetInactivityTimer();
         }
-    }, [isTxConfirmed, sendTxData]);
+    }, [view, publicClient, resetInactivityTimer]);
 
 
-    // Set up activity monitoring
+    // Set up user activity monitoring to reset timer
     useEffect(() => {
         const events = ['mousemove', 'click', 'keydown', 'touchstart'];
         events.forEach(event => window.addEventListener(event, resetInactivityTimer));
-        
-        resetInactivityTimer();
-        
         return () => {
             if (timerRef.current) clearTimeout(timerRef.current);
             events.forEach(event => window.removeEventListener(event, resetInactivityTimer));
@@ -212,54 +173,36 @@ export default function PaymentApp() {
                     </div>
                 )}
 
-                {/* VIEW: PAYMENT */}
+                {/* VIEW: PAYMENT (Direct QR Mode) */}
                 {view === 'payment' && (
                     <div className="bg-white p-8 rounded-3xl shadow-2xl shadow-emerald-500/10 max-w-sm w-full text-center animate-fade-in-up">
                         <div className="mb-6 flex justify-between items-center text-slate-500">
-                            <span className="text-xs font-bold tracking-widest uppercase">Connect Wallet</span>
+                            <span className="text-xs font-bold tracking-widest uppercase">Scan to Pay</span>
                             <span className="text-xs font-mono bg-slate-100 px-2 py-1 rounded">Native ETH</span>
                         </div>
                         
-                        <div className="h-52 flex flex-col items-center justify-center">
-                            
-                            {!isConnected ? (
-                                <div className="flex flex-col items-center gap-4">
-                                    <div className="text-slate-600 font-medium animate-pulse">
-                                        {status === 'Idle' ? 'Loading System...' : 'Generating QR Code...'}
-                                    </div>
-                                    
-                                    {/* FALLBACK BUTTON: Solves the "Stuck Loading" issue */}
-                                    <button 
-                                        onClick={() => open()}
-                                        className="text-xs font-bold text-emerald-600 bg-emerald-50 px-4 py-2 rounded-full hover:bg-emerald-100 transition-colors border border-emerald-200"
-                                    >
-                                        Click here if QR doesn't appear
-                                    </button>
-                                </div>
-                            ) : (
-                                <div className="text-emerald-500 font-bold text-xl animate-fade-in">
-                                    Wallet Connected!
-                                </div>
-                            )}
-                            
-                            {isConnected && chainId === sepolia.id && !sendTxData && (
-                                <p className="text-emerald-600 font-semibold mt-4">Check your phone to confirm!</p>
-                            )}
+                        <div className="flex flex-col items-center justify-center mb-6">
+                            {/* The Magic QR Code */}
+                            <div className="bg-white p-2 border-2 border-emerald-500 rounded-xl shadow-lg">
+                                <QRCodeSVG 
+                                    value={paymentURI}
+                                    size={200}
+                                    level={"H"}
+                                    includeMargin={true}
+                                />
+                            </div>
                         </div>
 
-                        <p className="text-slate-600 font-medium mb-2 mt-4">
-                            Awaiting: <span className="text-emerald-600 font-bold">{CONFIG.REQUIRED_AMOUNT} ETH</span>
+                        <p className="text-slate-600 font-medium mb-2">
+                            Send exactly: <span className="text-emerald-600 font-bold text-lg">{CONFIG.REQUIRED_AMOUNT} ETH</span>
                         </p>
-                        
-                        {sendTxData && (
-                            <p className="text-xs text-slate-400 font-mono break-all bg-slate-50 p-2 rounded border border-slate-100 mb-6">
-                                Tx: {sendTxData.hash.slice(0, 10)}...{sendTxData.hash.slice(-8)}
-                            </p>
-                        )}
+                        <p className="text-xs text-slate-400 mb-6">
+                            On Sepolia Network
+                        </p>
 
                         <div className="flex justify-center items-center gap-2 text-emerald-600 animate-pulse text-sm font-semibold mb-6">
                             <RefreshCw size={16} className="animate-spin" />
-                            {isTxConfirmed ? 'Confirmation received!' : 'Waiting...'}
+                            Waiting for transaction...
                         </div>
 
                         <button
