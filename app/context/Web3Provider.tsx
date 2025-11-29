@@ -2,9 +2,9 @@
 'use client';
 
 import React, { ReactNode } from 'react';
-import { WagmiProvider, State } from './wagmi';
+import { WagmiProvider, State } from 'wagmi';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { config, queryClient } from './wagmi'; // Adjust path to your wagmi.ts file
+import { config, queryClient } from '../wagmi'; // Adjust path to your wagmi.ts file
 
 interface Props {
   children: ReactNode;
