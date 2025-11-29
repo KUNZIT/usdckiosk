@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { CreditCard, Zap, RefreshCw, Activity, Lock } from 'lucide-react';
 import { useWeb3Modal } from '@web3modal/wagmi/react';
+// FIX: Replace useWaitForTransaction with useWaitForTransactionReceipt (Wagmi V2 update)
 import { useAccount, useSendTransaction, useWaitForTransactionReceipt } from 'wagmi'; 
 import { parseEther } from 'viem';
 import { sepolia } from 'wagmi/chains';
@@ -16,7 +17,6 @@ const CONFIG = {
 };
 
 export default function PaymentApp() {
-    // view: 'landing' | 'payment' | 'success'
     const [view, setView] = useState('landing'); 
     const [status, setStatus] = useState('Idle');
     const [txHash, setTxHash] = useState<string>('');
@@ -28,6 +28,7 @@ export default function PaymentApp() {
     const { open } = useWeb3Modal();
     const { address, isConnected, chainId } = useAccount();
 
+    // Convert ETH amount to Wei (BigInt format required by viem)
     const amountWei = parseEther(CONFIG.REQUIRED_AMOUNT.toString());
 
     // Wagmi hook to send transaction
@@ -38,25 +39,21 @@ export default function PaymentApp() {
     });
 
     // Wagmi hook to wait for transaction confirmation
-    const { isSuccess: isTxConfirmed, isLoading: isTxPending } = useWaitForTransactionReceipt({
+    // FIX: Changed useWaitForTransaction to useWaitForTransactionReceipt
+    const { isSuccess: isTxConfirmed } = useWaitForTransactionReceipt({
         hash: sendTxData?.hash,
     });
 
     // --- Utility Functions ---
 
-    // Function to reset the view and clear status
-    const handleCancel = () => {
-        if (timerRef.current) clearTimeout(timerRef.current);
-        setView('landing');
-        setStatus('Idle');
-        setTxHash(''); // Clear hash state
-    };
-
     const resetInactivityTimer = useCallback(() => {
         if (timerRef.current) clearTimeout(timerRef.current);
         timerRef.current = setTimeout(() => {
             console.log("User inactive. Resetting...");
-            handleCancel(); // Use the cancellation logic to reset
+            setView('landing');
+            setStatus('Idle');
+            setTxHash('');
+            // TODO: Consider disconnecting wallet here if needed
         }, CONFIG.INACTIVITY_LIMIT);
     }, []);
 
@@ -72,48 +69,34 @@ export default function PaymentApp() {
         playSuccessSound();
     };
 
-    // --- CORE FLOW HANDLER: Called ONLY on "Pay" Button Click ---
-    const handlePay = useCallback(() => {
-        setView('payment'); // Transition to payment view
-        resetInactivityTimer();
+    // --- Handle Connection/Transaction Flow ---
 
-        if (!isConnected) {
-            // 1. Not Connected: Open Modal to show QR code/connect options
-            setStatus("Waiting for Wallet Connection...");
-            open();
-        } else if (chainId !== sepolia.id) {
-            // 2. Connected but Wrong Network: Prompt Switch
-            setStatus("Wrong Network. Please switch to Sepolia.");
-            open({ view: 'Networks' });
-        } else {
-            // 3. Connected and Ready: Send Transaction immediately
-            setStatus(`Wallet connected: ${address?.slice(0, 6)}... Confirming transaction in wallet...`);
-            sendTransaction();
-        }
-    }, [isConnected, chainId, address, open, sendTransaction, resetInactivityTimer]);
-
-
-    // --- Monitor Connection Changes & Trigger Tx Post-Connect ---
     useEffect(() => {
         if (view === 'payment') {
             resetInactivityTimer();
-            
-            // Case 1: Wallet just connected successfully (after the modal closed)
-            if (isConnected && chainId === sepolia.id && !sendTxData) {
-                // We are in 'payment' view, but haven't successfully started a transaction yet. Start it now.
-                setStatus(`Wallet connected: ${address?.slice(0, 6)}... Requesting signature...`);
-                sendTransaction();
-            } 
-            // Case 2: Wrong Network
-            else if (isConnected && chainId !== sepolia.id) {
-                 setStatus("Wrong Network. Please switch to Sepolia.");
-            } 
-            // Case 3: Transaction started, waiting for confirmation
-            else if (sendTxData) {
-                setStatus(`Transaction initiated. Hash: ${sendTxData.hash.slice(0, 8)}... Waiting for confirmation.`);
+
+            // 1. Wallet Connect/Network Check
+            if (!isConnected) {
+                setStatus("Waiting for Wallet Connection...");
+                // Open the modal, which shows the QR code
+                open(); 
+            } else if (chainId !== sepolia.id) {
+                setStatus("Wrong Network. Please switch to Sepolia.");
+                // Prompt user to switch network
+                open({ view: 'Networks' }); 
+            } else {
+                setStatus(`Wallet connected: ${address?.slice(0, 6)}...`);
+                // 2. Wallet Connected and on Sepolia -> Send Transaction
+                if (!sendTxData) {
+                    // This is the trigger to open the MetaMask transaction screen
+                    sendTransaction();
+                    setStatus("Confirming transaction in wallet...");
+                } else {
+                    setStatus("Transaction pending...");
+                }
             }
         }
-    }, [view, isConnected, chainId, sendTxData, address, resetInactivityTimer, sendTransaction]);
+    }, [view, isConnected, chainId, sendTxData, address, open, resetInactivityTimer, sendTransaction]);
 
     // --- Handle Confirmation ---
     useEffect(() => {
@@ -123,7 +106,7 @@ export default function PaymentApp() {
     }, [isTxConfirmed, sendTxData]);
 
 
-    // Set up activity monitoring for inactivity timer
+    // Set up activity monitoring
     useEffect(() => {
         window.addEventListener('mousemove', resetInactivityTimer);
         window.addEventListener('click', resetInactivityTimer);
@@ -160,6 +143,7 @@ export default function PaymentApp() {
                 {/* VIEW: LANDING */}
                 {view === 'landing' && (
                     <div className="text-center space-y-8 animate-fade-in">
+                        {/* ... (Landing page content remains the same) ... */}
                         <div className="mb-8 relative">
                             <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-full blur opacity-25"></div>
                             <div className="relative bg-slate-800 p-6 rounded-full inline-block">
@@ -171,7 +155,7 @@ export default function PaymentApp() {
                             Secure, instant blockchain payments powered by Sepolia ETH.
                         </p>
                         <button
-                            onClick={handlePay}
+                            onClick={() => setView('payment')}
                             className="group relative inline-flex items-center gap-3 px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-900 rounded-xl font-bold text-xl transition-all transform hover:scale-105 active:scale-95 shadow-lg shadow-emerald-500/20"
                         >
                             <span>Pay {CONFIG.REQUIRED_AMOUNT} ETH</span>
@@ -189,7 +173,7 @@ export default function PaymentApp() {
                         </div>
                         
                         <div className="h-52 flex flex-col items-center justify-center">
-                            {/* WalletConnect QR/Modal will automatically appear or has already appeared */}
+                            {/* WalletConnect QR/Modal will automatically appear */}
                             <p className="text-slate-600 font-medium mb-4">
                                 Use the **QR Code** that opens automatically to connect your wallet.
                             </p>
@@ -212,13 +196,12 @@ export default function PaymentApp() {
 
 
                         <div className="flex justify-center items-center gap-2 text-emerald-600 animate-pulse text-sm font-semibold mb-6">
-                            <RefreshCw size={16} className={isTxPending ? 'animate-spin' : ''} />
+                            <RefreshCw size={16} className="animate-spin" />
                             {isTxConfirmed ? 'Confirmation received!' : 'Waiting for confirmation...'}
                         </div>
 
                         <button
-                            // FIX: Use the dedicated cancel function
-                            onClick={handleCancel}
+                            onClick={() => setView('landing')}
                             className="mt-4 text-xs text-slate-400 hover:text-slate-600 underline"
                         >
                             Cancel Transaction
@@ -229,6 +212,7 @@ export default function PaymentApp() {
                 {/* VIEW: SUCCESS POPUP */}
                 {view === 'success' && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/90 backdrop-blur-sm animate-fade-in">
+                        {/* ... (Success popup content remains the same) ... */}
                         <div className="bg-slate-800 p-8 rounded-3xl shadow-2xl border border-emerald-500/30 max-w-md w-full text-center relative overflow-hidden">
                             <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-emerald-500 via-transparent to-transparent"></div>
                             <div className="relative z-10">
@@ -257,6 +241,7 @@ export default function PaymentApp() {
             </main>
 
             <style>{`
+                /* ... (Styles remain the same) ... */
                 @keyframes fade-in {
                     from { opacity: 0; }
                     to { opacity: 1; }
