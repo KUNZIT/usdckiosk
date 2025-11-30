@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-// Removed Zap and CreditCard imports as they are no longer used in the landing view
 import { RefreshCw, Lock } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAccount, usePublicClient } from 'wagmi';
@@ -12,15 +11,19 @@ const CONFIG = {
     // Ensure this address is lowercase for comparison logic
     MERCHANT_ADDRESS: "0x35321cc55704948ee8c79f3c03cd0fcb055a3ac0".toLowerCase(),
     REQUIRED_AMOUNT: 0.001,
-    AUDIO_SRC: "/alert.wav"
+    AUDIO_SRC: "/alert.wav",
+    PAYMENT_TIMEOUT: 50, // Total seconds
+    BLUR_THRESHOLD: 25   // Seconds remaining when blur triggers
 };
 
 export default function PaymentApp() {
     const [view, setView] = useState('landing');
     const [txHash, setTxHash] = useState('');
     
+    // Timer state
+    const [timeLeft, setTimeLeft] = useState(CONFIG.PAYMENT_TIMEOUT);
+
     // We track the block number when the user started the payment flow
-    // So we only look for transactions that happened AFTER they clicked "Pay"
     const [startBlock, setStartBlock] = useState<bigint>(0n);
 
     const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -30,20 +33,25 @@ export default function PaymentApp() {
     const { isConnected: isAppConnected } = useAccount(); 
 
     // Create the Standard Payment URI (EIP-681)
-    // Format: ethereum:ADDRESS@CHAIN_ID?value=AMOUNT_IN_WEI
     const paymentURI = `ethereum:${CONFIG.MERCHANT_ADDRESS}@${sepolia.id}?value=${parseEther(CONFIG.REQUIRED_AMOUNT.toString()).toString()}`;
 
     // --- Utility Functions ---
 
+    // Centralized cancel function to be used by button AND timer
+    const handleCancel = useCallback(() => {
+        setView('landing');
+        setTxHash('');
+        // Reset timer for next time
+        setTimeLeft(CONFIG.PAYMENT_TIMEOUT);
+    }, []);
+
     const playSuccessSound = useCallback(() => {
         if (audioRef.current) {
-            // Reset time to 0 in case it played recently
             audioRef.current.currentTime = 0;
             const playPromise = audioRef.current.play();
-            
             if (playPromise !== undefined) {
                 playPromise.catch(error => {
-                    console.error("Audio playback failed (Check browser autoplay settings):", error);
+                    console.error("Audio playback failed:", error);
                 });
             }
         }
@@ -55,7 +63,30 @@ export default function PaymentApp() {
         playSuccessSound();
     };
 
-    // --- The Watcher Logic (The Core "One Step" Magic) ---
+    // --- Timer Logic ---
+    useEffect(() => {
+        let timerId: NodeJS.Timeout;
+
+        if (view === 'payment') {
+            // Reset timer when entering payment view
+            setTimeLeft(CONFIG.PAYMENT_TIMEOUT);
+
+            timerId = setInterval(() => {
+                setTimeLeft((prevTime) => {
+                    if (prevTime <= 1) {
+                        clearInterval(timerId);
+                        handleCancel(); // Auto-cancel when time is up
+                        return 0;
+                    }
+                    return prevTime - 1;
+                });
+            }, 1000);
+        }
+
+        return () => clearInterval(timerId);
+    }, [view, handleCancel]);
+
+    // --- The Watcher Logic ---
     useEffect(() => {
         let intervalId: NodeJS.Timeout;
 
@@ -63,25 +94,17 @@ export default function PaymentApp() {
             if (view !== 'payment' || !publicClient || startBlock === 0n) return;
 
             try {
-                // 1. Get the latest block number
                 const currentBlock = await publicClient.getBlockNumber();
 
-                // 2. Only check if a new block has been mined since we started
                 if (currentBlock >= startBlock) {
-                    
-                    // 3. Get the full block with transactions
                     const block = await publicClient.getBlock({ 
                         blockNumber: currentBlock, 
                         includeTransactions: true 
                     });
 
-                    // 4. Look for our transaction in this block
                     const foundTx = block.transactions.find((tx: any) => {
-                        // Check: Is it to our merchant?
                         const isToMerchant = tx.to?.toLowerCase() === CONFIG.MERCHANT_ADDRESS;
-                        // Check: Is it the right amount? (Allow exact match or slightly higher)
                         const isCorrectAmount = tx.value >= parseEther(CONFIG.REQUIRED_AMOUNT.toString());
-                        
                         return isToMerchant && isCorrectAmount;
                     });
 
@@ -94,9 +117,7 @@ export default function PaymentApp() {
             }
         };
 
-        // Start polling when in payment view
         if (view === 'payment') {
-            // Poll every 3 seconds
             intervalId = setInterval(checkRecentBlocks, 3000);
         }
 
@@ -117,7 +138,6 @@ export default function PaymentApp() {
     // --- Component Rendering ---
 
     return (
-        // Changed bg-slate-900 to bg-black specifically here
         <div className="min-h-screen bg-black text-white font-sans selection:bg-emerald-500 selection:text-white relative overflow-hidden">
             
             <audio ref={audioRef} src={CONFIG.AUDIO_SRC} preload="auto" />
@@ -125,24 +145,18 @@ export default function PaymentApp() {
             {/* MAIN CONTENT AREA */}
             <main className="flex flex-col items-center justify-center min-h-screen p-6">
 
-                {/* VIEW: LANDING (Cleaned up design) */}
+                {/* VIEW: LANDING */}
                 {view === 'landing' && (
                     <div className="text-center space-y-8 animate-fade-in">
-                        {/* Logo section removed here */}
-                        
                         <h1 className="text-5xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-blue-400">
                             FUTURE PAY
                         </h1>
 
-                        {/* Paragraph removed here */}
-                       
                         <button
                             onClick={() => setView('payment')}
-                            // Removed 'gap-3' and 'inline-flex items-center' as we removed the icon
                             className="group relative px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-900 rounded-xl font-bold text-xl transition-all transform hover:scale-105 active:scale-95 shadow-lg shadow-emerald-500/20"
                         >
                             <span>Pay {CONFIG.REQUIRED_AMOUNT} ETH</span>
-                            {/* CreditCard icon removed here */}
                         </button>
                     </div>
                 )}
@@ -152,12 +166,15 @@ export default function PaymentApp() {
                     <div className="bg-white p-8 rounded-3xl shadow-2xl shadow-emerald-500/10 max-w-sm w-full text-center animate-fade-in-up">
                         <div className="mb-6 flex justify-between items-center text-slate-500">
                             <span className="text-xs font-bold tracking-widest uppercase">Scan to Pay</span>
-                            <span className="text-xs font-mono bg-slate-100 px-2 py-1 rounded">Native ETH</span>
+                            {/* REPLACED "Native ETH" with Timer */}
+                            <span className={`text-xs font-mono px-2 py-1 rounded font-bold transition-colors ${timeLeft <= 10 ? 'bg-red-100 text-red-600' : 'bg-slate-100'}`}>
+                                Time left: {timeLeft}s
+                            </span>
                         </div>
                         
-                        <div className="flex flex-col items-center justify-center mb-6">
-                            {/* The Magic QR Code */}
-                            <div className="bg-white p-2 border-2 border-emerald-500 rounded-xl shadow-lg">
+                        <div className="flex flex-col items-center justify-center mb-6 relative">
+                            {/* The Magic QR Code with Blur Logic */}
+                            <div className={`bg-white p-2 border-2 border-emerald-500 rounded-xl shadow-lg transition-all duration-700 ease-in-out ${timeLeft <= CONFIG.BLUR_THRESHOLD ? 'blur-md opacity-20 pointer-events-none select-none' : ''}`}>
                                 <QRCodeSVG 
                                     value={paymentURI}
                                     size={200}
@@ -165,6 +182,15 @@ export default function PaymentApp() {
                                     includeMargin={true}
                                 />
                             </div>
+                            
+                            {/* Optional: Message explaining why it is blurred */}
+                            {timeLeft <= CONFIG.BLUR_THRESHOLD && (
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <span className="text-slate-900 font-bold bg-white/80 px-3 py-1 rounded-full text-sm shadow-sm animate-pulse">
+                                        Time Expiring...
+                                    </span>
+                                </div>
+                            )}
                         </div>
 
                         <p className="text-slate-600 font-medium mb-2">
@@ -180,7 +206,7 @@ export default function PaymentApp() {
                         </div>
 
                         <button
-                            onClick={() => setView('landing')}
+                            onClick={handleCancel}
                             className="mt-4 text-xs text-slate-400 hover:text-slate-600 underline"
                         >
                             Cancel Transaction
