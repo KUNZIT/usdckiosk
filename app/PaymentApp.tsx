@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { CreditCard, Zap, RefreshCw, Lock } from 'lucide-react';
+// Removed Zap and CreditCard imports as they are no longer used in the landing view
+import { RefreshCw, Lock } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAccount, usePublicClient } from 'wagmi';
 import { parseEther } from 'viem';
@@ -116,32 +117,32 @@ export default function PaymentApp() {
     // --- Component Rendering ---
 
     return (
-        <div className="min-h-screen bg-slate-900 text-white font-sans selection:bg-emerald-500 selection:text-white relative overflow-hidden">
+        // Changed bg-slate-900 to bg-black specifically here
+        <div className="min-h-screen bg-black text-white font-sans selection:bg-emerald-500 selection:text-white relative overflow-hidden">
             
             <audio ref={audioRef} src={CONFIG.AUDIO_SRC} preload="auto" />
 
             {/* MAIN CONTENT AREA */}
             <main className="flex flex-col items-center justify-center min-h-screen p-6">
 
-                {/* VIEW: LANDING */}
+                {/* VIEW: LANDING (Cleaned up design) */}
                 {view === 'landing' && (
                     <div className="text-center space-y-8 animate-fade-in">
-                        <div className="mb-8 relative">
-                            <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-full blur opacity-25"></div>
-                            <div className="relative bg-slate-800 p-6 rounded-full inline-block">
-                                <Zap size={64} className="text-emerald-400" />
-                            </div>
-                        </div>
-                        <h1 className="text-5xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-blue-400">FUTURE PAY</h1>
-                        <p className="text-slate-400 text-lg max-w-md mx-auto">
-                            Secure, instant blockchain payments powered by Sepolia ETH.
-                        </p>
+                        {/* Logo section removed here */}
+                        
+                        <h1 className="text-5xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-blue-400">
+                            FUTURE PAY
+                        </h1>
+
+                        {/* Paragraph removed here */}
+                       
                         <button
                             onClick={() => setView('payment')}
-                            className="group relative inline-flex items-center gap-3 px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-900 rounded-xl font-bold text-xl transition-all transform hover:scale-105 active:scale-95 shadow-lg shadow-emerald-500/20"
+                            // Removed 'gap-3' and 'inline-flex items-center' as we removed the icon
+                            className="group relative px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-900 rounded-xl font-bold text-xl transition-all transform hover:scale-105 active:scale-95 shadow-lg shadow-emerald-500/20"
                         >
                             <span>Pay {CONFIG.REQUIRED_AMOUNT} ETH</span>
-                            <CreditCard size={24} className="group-hover:rotate-12 transition-transform" />
+                            {/* CreditCard icon removed here */}
                         </button>
                     </div>
                 )}
