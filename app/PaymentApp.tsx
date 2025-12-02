@@ -2,31 +2,10 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { RefreshCw, Lock } from 'lucide-react';
-
-// --- MOCK DEPENDENCIES FOR PREVIEW ---
-// In your real app, uncomment your original imports and remove these mocks.
-// import { QRCodeSVG } from 'qrcode.react';
-// import { useAccount, usePublicClient } from 'wagmi';
-// import { parseEther } from 'viem';
-// import { sepolia } from 'wagmi/chains';
-
-const QRCodeSVG = ({ value, size }) => (
-    <img 
-        src={`https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(value)}`} 
-        alt="QR Code" 
-        width={size} 
-        height={size}
-    />
-);
-
-const useAccount = () => ({ isConnected: true });
-const usePublicClient = () => ({
-    getBlockNumber: async () => BigInt(100),
-    getBlock: async () => ({ transactions: [] })
-});
-const parseEther = (val) => val;
-const sepolia = { id: 11155111 };
-// -------------------------------------
+import { QRCodeSVG } from 'qrcode.react';
+import { useAccount, usePublicClient } from 'wagmi';
+import { parseEther } from 'viem';
+import { sepolia } from 'wagmi/chains';
 
 const CONFIG = {
     // Ensure this address is lowercase for comparison logic
@@ -44,7 +23,7 @@ export default function PaymentApp() {
     const [txHash, setTxHash] = useState('');
     
     // NEW: Track which phase of success we are in: 'timer' | 'message'
-    const [successPhase, setSuccessPhase] = useState('timer');
+    const [successPhase, setSuccessPhase] = useState<'timer' | 'message'>('timer');
     
     // Timer state for Payment Flow
     const [timeLeft, setTimeLeft] = useState(CONFIG.PAYMENT_TIMEOUT);
@@ -53,10 +32,9 @@ export default function PaymentApp() {
     const [successTimeLeft, setSuccessTimeLeft] = useState(CONFIG.SUCCESS_TIMEOUT);
 
     // We track the block number when the user started the payment flow
-    // FIXED: Changed 0n to BigInt(0) for environment compatibility
-    const [startBlock, setStartBlock] = useState(BigInt(0));
+    const [startBlock, setStartBlock] = useState<bigint>(0n);
 
-    const audioRef = useRef(null);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
 
     // Wagmi hook to read from blockchain
     const publicClient = usePublicClient();
@@ -88,7 +66,7 @@ export default function PaymentApp() {
         }
     }, []);
 
-    const handlePaymentSuccess = (hash) => {
+    const handlePaymentSuccess = (hash: string) => {
         setTxHash(hash);
         setView('success');
         setSuccessPhase('timer'); // Ensure we start at timer
@@ -97,7 +75,7 @@ export default function PaymentApp() {
 
     // --- Timer Logic (Payment Flow) ---
     useEffect(() => {
-        let timerId;
+        let timerId: NodeJS.Timeout;
 
         if (view === 'payment') {
             setTimeLeft(CONFIG.PAYMENT_TIMEOUT);
@@ -117,7 +95,7 @@ export default function PaymentApp() {
 
     // --- Timer Logic (Success Flow - Phase 1: Countdown) ---
     useEffect(() => {
-        let timerId;
+        let timerId: NodeJS.Timeout;
 
         if (view === 'success' && successPhase === 'timer') {
             setSuccessTimeLeft(CONFIG.SUCCESS_TIMEOUT);
@@ -134,11 +112,11 @@ export default function PaymentApp() {
             }, 1000);
         }
         return () => clearInterval(timerId);
-    }, [view, successPhase]); 
+    }, [view, successPhase]); // Removed handleReset from deps here
 
     // --- Logic (Success Flow - Phase 2: Final Message) ---
     useEffect(() => {
-        let timeoutId;
+        let timeoutId: NodeJS.Timeout;
 
         if (view === 'success' && successPhase === 'message') {
             // Wait for 2 seconds (CONFIG.FINAL_MESSAGE_DURATION) then reset
@@ -152,11 +130,10 @@ export default function PaymentApp() {
 
     // --- The Watcher Logic ---
     useEffect(() => {
-        let intervalId;
+        let intervalId: NodeJS.Timeout;
 
         const checkRecentBlocks = async () => {
-            // FIXED: Changed 0n to BigInt(0)
-            if (view !== 'payment' || !publicClient || startBlock === BigInt(0)) return;
+            if (view !== 'payment' || !publicClient || startBlock === 0n) return;
 
             try {
                 const currentBlock = await publicClient.getBlockNumber();
@@ -167,7 +144,7 @@ export default function PaymentApp() {
                         includeTransactions: true 
                     });
 
-                    const foundTx = block.transactions.find((tx) => {
+                    const foundTx = block.transactions.find((tx: any) => {
                         const isToMerchant = tx.to?.toLowerCase() === CONFIG.MERCHANT_ADDRESS;
                         const isCorrectAmount = tx.value >= parseEther(CONFIG.REQUIRED_AMOUNT.toString());
                         return isToMerchant && isCorrectAmount;
@@ -198,15 +175,6 @@ export default function PaymentApp() {
             });
         }
     }, [view, publicClient]);
-
-
-    // --- Helper for Ring Animation ---
-    // Calculate properties for the "Time Expiring" ring
-    const radius = 30; // Radius of the ring
-    const circumference = 2 * Math.PI * radius;
-    // Calculate progress (0 to 1) based on time left in the blur phase
-    const progress = Math.max(0, timeLeft / CONFIG.BLUR_THRESHOLD); 
-    const dashOffset = circumference * (1 - progress);
 
 
     // --- Component Rendering ---
@@ -256,41 +224,11 @@ export default function PaymentApp() {
                                 />
                             </div>
                             
-                            {/* REPLACED TEXT WITH RING ANIMATION */}
                             {timeLeft <= CONFIG.BLUR_THRESHOLD && (
-                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                    <div className="relative w-24 h-24 flex items-center justify-center bg-white/50 backdrop-blur-sm rounded-full shadow-lg">
-                                        {/* SVG Ring Container */}
-                                        <svg className="w-full h-full transform -rotate-90">
-                                            {/* Background Circle */}
-                                            <circle
-                                                cx="48"
-                                                cy="48"
-                                                r={radius}
-                                                stroke="#e2e8f0" // slate-200
-                                                strokeWidth="6"
-                                                fill="transparent"
-                                            />
-                                            {/* Progress Circle */}
-                                            <circle
-                                                cx="48"
-                                                cy="48"
-                                                r={radius}
-                                                stroke="#ef4444" // red-500
-                                                strokeWidth="6"
-                                                fill="transparent"
-                                                strokeDasharray={circumference}
-                                                strokeDashoffset={dashOffset}
-                                                strokeLinecap="round"
-                                                className="transition-all duration-1000 ease-linear"
-                                            />
-                                        </svg>
-                                        
-                                        {/* Optional: Icon inside the ring */}
-                                        <div className="absolute text-red-500 animate-pulse">
-                                            <Lock size={24} />
-                                        </div>
-                                    </div>
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <span className="text-slate-900 font-bold bg-white/80 px-3 py-1 rounded-full text-sm shadow-sm animate-pulse">
+                                        Time Expiring...
+                                    </span>
                                 </div>
                             )}
                         </div>
@@ -307,17 +245,9 @@ export default function PaymentApp() {
                             Waiting for transaction...
                         </div>
 
-                        {/* DEBUG BUTTON FOR PREVIEW ONLY */}
-                        <button 
-                            onClick={() => handlePaymentSuccess("0x_mock_hash_123")}
-                            className="mb-4 text-xs bg-slate-100 px-2 py-1 rounded text-slate-500 hover:bg-slate-200"
-                        >
-                            (Debug: Simulate Success)
-                        </button>
-
                         <button
                             onClick={handleReset}
-                            className="block w-full text-xs text-slate-400 hover:text-slate-600 underline"
+                            className="mt-4 text-xs text-slate-400 hover:text-slate-600 underline"
                         >
                             Cancel Transaction
                         </button>
@@ -359,7 +289,7 @@ export default function PaymentApp() {
                             {successPhase === 'message' && (
                                 <div className="absolute inset-0 flex flex-col items-center justify-center animate-fade-in p-6 bg-slate-800 rounded-3xl z-20">
                                      <h2 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-br from-white to-emerald-200 mb-4 animate-scale-in">
-                                         Here you are!
+                                        Here you are!
                                     </h2>
                                     <p className="text-2xl text-emerald-400 font-medium">
                                         Thank you!
