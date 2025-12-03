@@ -30,7 +30,7 @@ declare global {
         open(options: SerialOptions): Promise<void>;
         close(): Promise<void>;
         readable?: ReadableStream<Uint8Array>;
-        writable?: WritableStream<Uint8Array>;
+        writable?: WritableStream<WritableStreamDefaultWriter<Uint8Array> | Uint8Array>;
     }
     interface SerialPortInfo {
         usbVendorId?: number;
@@ -71,6 +71,7 @@ export default function PaymentApp() {
     const [successPhase, setSuccessPhase] = useState<'timer' | 'message'>('timer');
     const [timeLeft, setTimeLeft] = useState(CONFIG.PAYMENT_TIMEOUT);
     const [successTimeLeft, setSuccessTimeLeft] = useState(CONFIG.SUCCESS_TIMEOUT);
+    // startBlock is now initialized outside of the view dependency
     const [startBlock, setStartBlock] = useState<bigint>(0n);
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -377,29 +378,40 @@ export default function PaymentApp() {
         return () => clearTimeout(timeoutId);
     }, [view, successPhase, handleReset]);
 
-    // The Watcher Logic (FIXED to check multiple blocks)
+    // --- FIX: Initialize Start Block immediately on load ---
+    useEffect(() => {
+        if (publicClient && startBlock === 0n) {
+            publicClient.getBlockNumber().then(blockNum => {
+                setStartBlock(blockNum);
+                console.log(`[Web3] Initial Start Block set to: ${blockNum}`);
+            }).catch(e => {
+                console.error("Failed to fetch initial block number:", e);
+                setError("Failed to connect to blockchain RPC.");
+            });
+        }
+    }, [publicClient, startBlock]);
+
+
+    // The Watcher Logic (Uses the early-set startBlock)
     useEffect(() => {
         let intervalId: NodeJS.Timeout;
 
         const checkRecentBlocks = async () => {
+            // Only run if we are in payment view AND the startBlock has been initialized
             if (view !== 'payment' || !publicClient || startBlock === 0n) return;
 
             try {
                 const currentBlock = await publicClient.getBlockNumber();
                 const requiredValue = parseEther(CONFIG.REQUIRED_AMOUNT.toString());
                 
-                // --- FIX: Check the last 10 blocks for the transaction ---
-                // We check backward from the latest block (maxBlock) to the startBlock, 
-                // but we limit the search depth to the last 10 blocks (minBlockToSearch) for performance.
-                
+                // Check the last 10 blocks (or fewer, if near the start block)
                 const maxBlock = currentBlock;
-                // Calculate 10 blocks back, or 0n if currentBlock is less than 10
                 const minBlockToSearch = currentBlock > 10n ? currentBlock - 10n : 0n;
-                // Ensure we don't start checking before the payment flow began (startBlock)
+                // Search from the later of the recorded startBlock or the minimum block to check
                 const searchStartBlock = minBlockToSearch > startBlock ? minBlockToSearch : startBlock;
 
                 for (let i = maxBlock; i >= searchStartBlock; i--) {
-                    // Safety check to ensure we don't accidentally go before the start block or 0
+                    // Stop searching if we go past the recorded start block
                     if (i < startBlock) break;
 
                     const block = await publicClient.getBlock({
@@ -411,7 +423,12 @@ export default function PaymentApp() {
                         const isToMerchant = tx.to?.toLowerCase() === CONFIG.MERCHANT_ADDRESS;
                         // Use >= to allow for slightly higher amounts, which is standard
                         const isCorrectAmount = tx.value >= requiredValue; 
-                        return isToMerchant && isCorrectAmount;
+                        
+                        // Also ensure the transaction has input data only if the merchant address is a contract 
+                        // (which is not the case here), and ensure it's a value transfer.
+                        const isValueTransfer = !tx.input || tx.input === '0x';
+
+                        return isToMerchant && isCorrectAmount && isValueTransfer;
                     });
 
                     if (foundTx) {
@@ -421,7 +438,6 @@ export default function PaymentApp() {
                         return;
                     }
                 }
-                // --- END FIX ---
 
             } catch (error) {
                 console.error("Error polling blockchain or fetching blocks:", error);
@@ -433,19 +449,8 @@ export default function PaymentApp() {
             intervalId = setInterval(checkRecentBlocks, 3000); 
         }
 
-        // Must include handlePaymentSuccess in dependency array as it is a callback used inside an effect
         return () => clearInterval(intervalId);
     }, [view, publicClient, startBlock, handlePaymentSuccess]); 
-
-    // Initialize the Start Block when entering payment view (Existing Code)
-    useEffect(() => {
-        if (view === 'payment' && publicClient) {
-            publicClient.getBlockNumber().then(blockNum => {
-                setStartBlock(blockNum);
-            });
-        }
-    }, [view, publicClient]);
-
 
     const isWebSerialSupported = typeof navigator !== "undefined" && "serial" in navigator;
 
