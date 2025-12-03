@@ -227,7 +227,7 @@ export default function PaymentApp() {
                             {timeLeft <= CONFIG.BLUR_THRESHOLD && (
                                 <div className="absolute inset-0 flex items-center justify-center">
                                     <span className="text-slate-900 font-bold bg-white/80 px-3 py-1 rounded-full text-sm shadow-sm animate-pulse">
-                                        Time Expiring...
+                                        Scaning Time Expired!
                                     </span>
                                 </div>
                             )}
