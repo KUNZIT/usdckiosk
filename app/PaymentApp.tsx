@@ -190,10 +190,6 @@ export default function PaymentApp() {
                 {/* VIEW: LANDING */}
                 {view === 'landing' && (
                     <div className="text-center space-y-8 animate-fade-in">
-
-                      <div className="flex items-center justify-center w-12 h-12 rounded-full bg-[#CF0C60] text-white shadow-sm">
-                      <span className="text-2xl font-bold font-sans">S</span>
-                      </div>
                         
                         <h1 className="text-5xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-blue-400">
                             ETHEREUM sepolia
