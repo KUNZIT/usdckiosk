@@ -190,48 +190,44 @@ export default function PaymentApp() {
 
 // Reusable component for the content on each side of the cube
 const CubeFaceContent = ({ setView }) => {
-  // CONFIG mock for the button text
-  const CONFIG = { REQUIRED_AMOUNT: 0.05 };
-
   return (
     <div className="flex flex-col items-center justify-center h-full w-full p-6 bg-slate-950/90 border border-emerald-500/30 backdrop-blur-sm shadow-[0_0_50px_rgba(16,185,129,0.1)]">
-        {/* VIEW: LANDING */}
-        <div className="text-center space-y-8 animate-fade-in">
-
-            {/* Ethereum SVG Logo */}
-            <div className="flex justify-center">
-                <svg className="h-12 w-auto mb-2 drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]" viewBox="0 0 784 1277" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M392.07 0L383.5 29.11V873.74L392.07 882.29L784.13 650.54L392.07 0Z" fill="#343434"/>
-                    <path d="M392.07 0L0 650.54L392.07 882.29V472.33V0Z" fill="#8C8C8C"/>
-                    <path d="M392.07 882.29L784.13 650.54L392.07 472.33V882.29Z" fill="#3C3C3B"/>
-                    <path d="M0 650.54L392.07 882.29V472.33L0 650.54Z" fill="#8C8C8C"/>
-                    <path d="M392.07 954.81V980.38L0 701.32L392.07 1277.02L784.13 701.32L392.07 954.81Z" fill="#3C3C3B"/>
-                </svg>
-            </div>
-
-            <h1 className="text-5xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-blue-400 drop-shadow-sm">
-                ETHEREUM sepolia
-            </h1>
-
-            <button
-                onClick={() => setView('payment')}
-                className="group relative px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-900 rounded-xl font-bold text-xl transition-all transform hover:scale-105 active:scale-95 shadow-lg shadow-emerald-500/20"
-            >
-                <span>Pay {CONFIG.REQUIRED_AMOUNT} ETH</span>
-            </button>
+      <div className="text-center space-y-8 animate-fade-in">
+        
+        {/* Ethereum SVG Logo */}
+        <div className="flex justify-center">
+          <svg className="h-12 w-auto mb-2 drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]" viewBox="0 0 784 1277" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M392.07 0L383.5 29.11V873.74L392.07 882.29L784.13 650.54L392.07 0Z" fill="#343434"/>
+            <path d="M392.07 0L0 650.54L392.07 882.29V472.33V0Z" fill="#8C8C8C"/>
+            <path d="M392.07 882.29L784.13 650.54L392.07 472.33V882.29Z" fill="#3C3C3B"/>
+            <path d="M0 650.54L392.07 882.29V472.33L0 650.54Z" fill="#8C8C8C"/>
+            <path d="M392.07 954.81V980.38L0 701.32L392.07 1277.02L784.13 701.32L392.07 954.81Z" fill="#3C3C3B"/>
+          </svg>
         </div>
+
+        <h1 className="text-5xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-blue-400 drop-shadow-sm">
+            ETHEREUM sepolia
+        </h1>
+
+        <button
+            onClick={() => setView('payment')}
+            className="group relative px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-900 rounded-xl font-bold text-xl transition-all transform hover:scale-105 active:scale-95 shadow-lg shadow-emerald-500/20"
+        >
+            <span>Pay {CONFIG.REQUIRED_AMOUNT} ETH</span>
+        </button>
+      </div>
     </div>
   );
 };
 
-export default function App() {
+export default function PaymentApp() {
   const [view, setView] = useState('landing');
+  const audioRef = useRef(null);
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center overflow-hidden perspective-container">
-      {/* Injecting Custom Keyframes for the rotation 
-        Tailwind doesn't have rotateY keyframes built-in by default
-      */}
+    <div className="min-h-screen bg-black text-white font-sans selection:bg-emerald-500 selection:text-white relative overflow-hidden flex items-center justify-center perspective-container">
+      
+      {/* --- INLINE STYLES FOR 3D CUBE --- */}
       <style>{`
         .perspective-container {
           perspective: 1000px;
@@ -241,19 +237,19 @@ export default function App() {
           height: 24rem; /* h-96 */
           position: relative;
           transform-style: preserve-3d;
-          animation: spinCube 20s infinite linear;
+          /* Rotate Front-to-Left implies the Cube spins to the Right (positive Y) */
+          animation: spinCube 20s infinite linear; 
         }
         .cube-face {
           position: absolute;
           width: 24rem;
           height: 24rem;
-          backface-visibility: hidden; /* Optional: Hides back of faces for cleaner look */
+          backface-visibility: hidden; /* Optional: hides back faces */
         }
         
-        /* Math: w-96 is 24rem. 
-           TranslateZ should be half the width (12rem) to create the box center.
+        /* Cube Face Translations 
+           Width is 24rem, so translateZ is 12rem (half width)
         */
-        
         .face-front { transform: rotateY(0deg) translateZ(12rem); }
         .face-right { transform: rotateY(90deg) translateZ(12rem); }
         .face-back  { transform: rotateY(180deg) translateZ(12rem); }
@@ -261,39 +257,48 @@ export default function App() {
 
         @keyframes spinCube {
           from { transform: rotateY(0deg); }
-          to { transform: rotateY(360deg); } /* Rotates Front -> Left -> Back -> Right */
+          to { transform: rotateY(360deg); } /* Spins continuously */
         }
       `}</style>
 
-      {/* THE 3D SCENE */}
-      <div className="cube-wrapper">
-        
-        {/* FRONT FACE */}
-        <div className="cube-face face-front">
-          <CubeFaceContent setView={setView} />
-        </div>
+      {/* Audio Element from your error snippet */}
+      <audio ref={audioRef} src={CONFIG.AUDIO_SRC} preload="auto" />
 
-        {/* RIGHT FACE */}
-        <div className="cube-face face-right">
-          <CubeFaceContent setView={setView} />
+      {/* --- VIEW: LANDING (3D CUBE) --- */}
+      {view === 'landing' && (
+        <div className="cube-wrapper">
+          <div className="cube-face face-front">
+            <CubeFaceContent setView={setView} />
+          </div>
+          <div className="cube-face face-right">
+            <CubeFaceContent setView={setView} />
+          </div>
+          <div className="cube-face face-back">
+            <CubeFaceContent setView={setView} />
+          </div>
+          <div className="cube-face face-left">
+            <CubeFaceContent setView={setView} />
+          </div>
         </div>
+      )}
 
-        {/* BACK FACE */}
-        <div className="cube-face face-back">
-           <CubeFaceContent setView={setView} />
+      {/* --- VIEW: PAYMENT (Flat View) --- */}
+      {view === 'payment' && (
+        <div className="z-10 animate-fade-in text-center">
+            <h2 className="text-3xl font-bold mb-4">Payment View</h2>
+            <p className="text-gray-400 mb-6">Connect your wallet to proceed...</p>
+            <button 
+                onClick={() => setView('landing')}
+                className="text-emerald-500 hover:text-emerald-400 underline"
+            >
+                Back to Landing
+            </button>
         </div>
+      )}
 
-        {/* LEFT FACE */}
-        <div className="cube-face face-left">
-           <CubeFaceContent setView={setView} />
-        </div>
-
-      </div>
     </div>
   );
 }
-
-
 
             
 
