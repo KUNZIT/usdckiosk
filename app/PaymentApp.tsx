@@ -190,7 +190,14 @@ export default function PaymentApp() {
                 {/* VIEW: LANDING */}
                 {view === 'landing' && (
                     <div className="text-center space-y-8 animate-fade-in">
-                        
+
+                        <svg className="h-12 w-auto mb-2" viewBox="0 0 784 1277" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M392.07 0L383.5 29.11V873.74L392.07 882.29L784.13 650.54L392.07 0Z" fill="#343434"/>
+    <path d="M392.07 0L0 650.54L392.07 882.29V472.33V0Z" fill="#8C8C8C"/>
+    <path d="M392.07 882.29L784.13 650.54L392.07 472.33V882.29Z" fill="#3C3C3B"/>
+    <path d="M0 650.54L392.07 882.29V472.33L0 650.54Z" fill="#8C8C8C"/>
+    <path d="M392.07 954.81V980.38L0 701.32L392.07 1277.02L784.13 701.32L392.07 954.81Z" fill="#3C3C3B"/>
+  </svg>                        
                         <h1 className="text-5xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-blue-400">
                             ETHEREUM sepolia
                         </h1>
