@@ -118,13 +118,8 @@ export default function PaymentApp() {
         setSuccessPhase('timer'); 
         playSuccessSound();
         
-        // CRITICAL INTEGRATION POINT: Send command to Arduino
-        if (isConnected) {
-            console.log("Payment confirmed. Triggering Arduino relay operation.");
-            operateRelay();
-        } else {
-            console.warn("Payment confirmed, but Arduino is not connected. Relay command skipped.");
-        }
+        // CRITICAL INTEGRATION POINT: Removed direct call to operateRelay(). 
+        // It is now handled by the dedicated useEffect hook below.
     };
 
     // --- ARDUINO/WEB SERIAL LOGIC ---
@@ -320,6 +315,21 @@ export default function PaymentApp() {
             if (reader) reader.cancel().catch(() => {});
         };
     }, [isConnected, reader, disconnectFromArduino]);
+
+    // 3. Isolated Arduino Relay Trigger (New Logic)
+    useEffect(() => {
+        if (view === 'success' && txHash && isConnected) {
+            console.log("[Arduino Isolate] Payment successful. Triggering relay operation.");
+            // Delay the operation slightly to ensure the view transition/audio starts first
+            const timeout = setTimeout(() => {
+                operateRelay();
+            }, 100); 
+
+            return () => clearTimeout(timeout);
+        } else if (view === 'success' && txHash && !isConnected) {
+            console.warn("[Arduino Isolate] Payment successful, but Arduino is not connected. Relay command skipped.");
+        }
+    }, [view, txHash, isConnected, operateRelay]);
 
 
     // --- TIMER & WATCHER LOGIC ---
