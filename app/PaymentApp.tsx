@@ -463,7 +463,7 @@ export default function PaymentApp() {
 
             {/* ARDUINO CONNECTION STATUS & BUTTONS */}
             {isWebSerialSupported && (
-                // MODIFICATION: Add 'hidden' class when isConnected is true
+                // MODIFICATION: Add 'opacity-0 pointer-events-none' classes when isConnected is true to hide the panel
                 <div 
                     className={`absolute top-4 right-4 z-10 flex flex-col items-end space-y-2 p-3 rounded-xl bg-slate-900/70 backdrop-blur-sm shadow-xl border border-slate-700 transition-opacity duration-300 ${isConnected ? 'opacity-0 pointer-events-none' : ''}`}
                 >
@@ -534,7 +534,8 @@ export default function PaymentApp() {
 
                         <button
                             onClick={() => setView('payment')}
-                            className="group relative px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-900 rounded-xl font-bold text-xl transition-all transform hover:scale-105 active:scale-95 shadow-lg shadow-emerald-500/20"
+                            // MODIFICATION: Updated classes for black background, emerald-500 text, emerald-500 border, and no shadow.
+                            className="group relative px-8 py-4 bg-black border border-emerald-500 hover:bg-emerald-900 text-emerald-500 rounded-xl font-bold text-xl transition-all transform hover:scale-105 active:scale-95"
                         >
                             <span>Pay {CONFIG.REQUIRED_AMOUNT} ETH</span>
                         </button>
