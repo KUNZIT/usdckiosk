@@ -542,7 +542,10 @@ export default function PaymentApp() {
                         
                         {/* Display Serial Trigger Status */}
                         {isConnected && (
-                            
+
+ <p className="text-sm text-emerald-400">
+                                
+                            </p>                        
                         )}
 
                         {error && (
