@@ -5,7 +5,7 @@ import { RefreshCw, Lock, AlertCircle } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { usePublicClient } from 'wagmi';
 import { parseEther } from 'viem';
-import { sepolia } from 'wagmi/chains';
+import { baseSepolia } from 'wagmi/chains';
 
 // Define the SerialPort type globally for TypeScript compatibility
 declare global {
@@ -87,7 +87,7 @@ export default function PaymentApp() {
 
     // Wagmi hooks 
     const publicClient = usePublicClient();
-    const paymentURI = `ethereum:${CONFIG.MERCHANT_ADDRESS}@${sepolia.id}?value=${parseEther(CONFIG.REQUIRED_AMOUNT.toString()).toString()}`;
+    const paymentURI = `ethereum:${CONFIG.MERCHANT_ADDRESS}@${baseSepolia.id}?value=${parseEther(CONFIG.REQUIRED_AMOUNT.toString()).toString()}`;
 
     // --- UTILITY FUNCTIONS ---
 
@@ -535,7 +535,7 @@ export default function PaymentApp() {
                             
                             className="group relative px-8 py-4 bg-black border border-emerald-500 hover:bg-emerald-900 text-emerald-500 rounded-xl font-bold text-xl transition-all transform hover:scale-105 active:scale-95"
                         >
-                            <span>Pay {CONFIG.REQUIRED_AMOUNT} ETH Sepolia </span>
+                            <span>Pay {CONFIG.REQUIRED_AMOUNT} ETH Base Sepolia </span>
                         </button>
                         
                         {/* Display Serial Trigger Status */}
@@ -590,7 +590,7 @@ export default function PaymentApp() {
                             Send exactly: <span className="text-emerald-600 font-bold text-lg">{CONFIG.REQUIRED_AMOUNT} ETH</span>
                         </p>
                         <p className="text-xs text-slate-400 mb-6">
-                            On Sepolia Network
+                            On Base Sepolia Network
                         </p>
 
                         <div className="flex justify-center items-center gap-2 text-emerald-600 animate-pulse text-sm font-semibold mb-6">
