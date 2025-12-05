@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { RefreshCw, Lock, AlertCircle } from 'lucide-react';
+import { RefreshCw, AlertCircle } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { usePublicClient } from 'wagmi';
-import { parseEther } from 'viem';
+import { parseUnits } from 'viem'; // Changed from parseEther to parseUnits for USDC decimals
 import { baseSepolia } from 'wagmi/chains';
 
 // Define the SerialPort type globally for TypeScript compatibility
@@ -41,9 +41,13 @@ declare global {
 }
 
 const CONFIG = {
-    // Web3 Config
+    // Web3 Config (USDC UPDATES)
     MERCHANT_ADDRESS: "0x35321cc55704948ee8c79f3c03cd0fcb055a3ac0".toLowerCase(),
-    REQUIRED_AMOUNT: 0.0001,
+    // Official USDC Contract on Base Sepolia
+    USDC_CONTRACT_ADDRESS: "0x036CbD53842c5426634e7929541eC2318f3dCF7e".toLowerCase(), 
+    // USDC has 6 decimals. 0.1 USDC = 10 cents. 
+    REQUIRED_AMOUNT: 0.1, 
+    
     AUDIO_SRC: "/alert.wav",
     PAYMENT_TIMEOUT: 50,
     SUCCESS_TIMEOUT: 10,
@@ -62,7 +66,6 @@ const CONFIG = {
     BUTTON_TRIGGER_COMMAND: "BUTTON_4_PRESSED",
     RELAY_OFF_COMMAND: "RELAY_AUTO_OFF",
 };
-
 
 export default function PaymentApp() {
     // Web3 Payment State
@@ -83,11 +86,17 @@ export default function PaymentApp() {
     const [writer, setWriter] = useState<WritableStreamDefaultWriter<Uint8Array> | null>(null);
     const [needsPermission, setNeedsPermission] = useState(false);
     const [autoConnectAttempted, setAutoConnectAttempted] = useState(false);
-    const [relayIsActive, setRelayIsActive] = useState(false); // Track state based on Arduino message
+    const [relayIsActive, setRelayIsActive] = useState(false); 
 
     // Wagmi hooks 
     const publicClient = usePublicClient();
-    const paymentURI = `ethereum:${CONFIG.MERCHANT_ADDRESS}@${baseSepolia.id}?value=${parseEther(CONFIG.REQUIRED_AMOUNT.toString()).toString()}`;
+
+    // --- QR CODE GENERATION (UPDATED FOR USDC TOKEN) ---
+    // Format: ethereum:<contract_address>/transfer?address=<recipient>&uint256=<amount_in_smallest_unit>
+    // Note: USDC has 6 decimals.
+    const usdcAmountInSmallestUnit = parseUnits(CONFIG.REQUIRED_AMOUNT.toString(), 6).toString();
+    
+    const paymentURI = `ethereum:${CONFIG.USDC_CONTRACT_ADDRESS}@${baseSepolia.id}/transfer?address=${CONFIG.MERCHANT_ADDRESS}&uint256=${usdcAmountInSmallestUnit}`;
 
     // --- UTILITY FUNCTIONS ---
 
@@ -125,14 +134,13 @@ export default function PaymentApp() {
         [port, writer, isConnected],
     );
     
-    
-    // NOTE: This helper is only kept for clarity, though its use is minimal now.
+    // NOTE: This helper is only kept for clarity.
     const operateRelay = useCallback(async () => {
         await sendCommand(CONFIG.RELAY_COMMAND);
     }, [sendCommand]);
 
 
-    const handlePaymentSuccess = useCallback((hash: string) => { // Added useCallback here for consistency
+    const handlePaymentSuccess = useCallback((hash: string) => { 
         setTxHash(hash);
         setView('success');
         setSuccessPhase('timer'); 
@@ -142,11 +150,10 @@ export default function PaymentApp() {
             audioRef.current.currentTime = 0;
             const playPromise = audioRef.current.play();
             
-            // Define the action to take after audio attempts to play
             const relayAction = () => {
                 if (isConnected) {
                     console.log("Payment confirmed. Triggering Arduino relay operation.");
-                    sendCommand(CONFIG.RELAY_COMMAND); // Directly call sendCommand
+                    sendCommand(CONFIG.RELAY_COMMAND); 
                 } else {
                     console.warn("Payment confirmed, but Arduino is not connected. Relay command skipped.");
                 }
@@ -155,15 +162,13 @@ export default function PaymentApp() {
             if (playPromise !== undefined) {
                 playPromise.then(relayAction).catch(error => {
                     console.error("Audio playback failed:", error);
-                    // If audio fails to play (common without initial user interaction), still execute the relay action
                     relayAction(); 
                 });
             } else {
-                // Synchronous playback case
                 relayAction();
             }
         }
-    }, [isConnected, sendCommand]); // Dependency on sendCommand is correct
+    }, [isConnected, sendCommand]);
 
     const disconnectFromArduino = useCallback(async () => {
         if (port) {
@@ -298,7 +303,6 @@ export default function PaymentApp() {
 
                         if (line === CONFIG.BUTTON_TRIGGER_COMMAND) {
                             console.log("[Arduino] External button pressed! Triggering payment view.");
-                            // Only switch if we are on the landing page
                             setView(currentView => currentView === 'landing' ? 'payment' : currentView); 
                         } else if (line === "RELAY_ON_OK") {
                             setRelayIsActive(true);
@@ -306,7 +310,6 @@ export default function PaymentApp() {
                             setRelayIsActive(false);
                         }
                     }
-                    
                     
                     await new Promise(resolve => setTimeout(resolve, 1));
                 }
@@ -327,7 +330,7 @@ export default function PaymentApp() {
     }, [isConnected, reader, disconnectFromArduino]);
 
 
-    // --- TIMER & WATCHER LOGIC (Proven fast logic) ---
+    // --- TIMER & WATCHER LOGIC ---
 
     // Timer Logic (Payment Flow)
     useEffect(() => {
@@ -382,14 +385,14 @@ export default function PaymentApp() {
         return () => clearTimeout(timeoutId);
     }, [view, successPhase, handleReset]);
 
-    // Initialize the Start Block when entering payment view (Crucial for defining the search window)
+    // Initialize the Start Block
     useEffect(() => {
         if (view === 'payment' && publicClient) {
             publicClient.getBlockNumber().then(blockNum => {
                 setStartBlock(blockNum);
                 console.log(`[Web3] Payment Flow Start Block set to: ${blockNum}`);
             }).catch(e => {
-                console.error("Failed to fetch block number on payment start:", e);
+                console.error("Failed to fetch block number:", e);
                 setError("Failed to initialize blockchain connection.");
             });
         }
@@ -399,22 +402,20 @@ export default function PaymentApp() {
     }, [view, publicClient]);
 
 
-    // The Watcher Logic (Using the publicClient from your fast Vercel config)
+    // --- BLOCKCHAIN WATCHER (MODIFIED FOR USDC) ---
     useEffect(() => {
         let intervalId: NodeJS.Timeout;
 
         const checkRecentBlocks = async () => {
-            // Only run if we are in payment view AND the startBlock has been initialized
             if (view !== 'payment' || !publicClient || startBlock === 0n) return;
 
             try {
                 const currentBlock = await publicClient.getBlockNumber();
-                const requiredValue = parseEther(CONFIG.REQUIRED_AMOUNT.toString());
+                // 1. Calculate required amount in BigInt (USDC has 6 decimals)
+                const requiredValue = parseUnits(CONFIG.REQUIRED_AMOUNT.toString(), 6);
                 
-                // Optimized check: Look back 10 blocks or to the start block, whichever is older.
                 const maxBlocksToSearch = 10n;
                 const minBlockToSearch = currentBlock > maxBlocksToSearch ? currentBlock - maxBlocksToSearch : 0n;
-
                 const searchStartBlock = minBlockToSearch > startBlock ? minBlockToSearch : startBlock;
 
                 for (let i = currentBlock; i >= searchStartBlock; i--) {
@@ -423,28 +424,48 @@ export default function PaymentApp() {
                         includeTransactions: true
                     });
 
+                    // 2. SEARCH FOR USDC TRANSFER TRANSACTIONS
                     const foundTx = block.transactions.find((tx: any) => {
-                        const isToMerchant = tx.to?.toLowerCase() === CONFIG.MERCHANT_ADDRESS;
-                        const isCorrectAmount = tx.value >= requiredValue; 
-                        const isValueTransfer = !tx.input || tx.input === '0x';
+                        // A: Check if tx is interacting with USDC Contract
+                        const isToUSDC = tx.to?.toLowerCase() === CONFIG.USDC_CONTRACT_ADDRESS;
+                        
+                        // B: Check if input data is a 'transfer' function (0xa9059cbb)
+                        // Input layout: [method_id 4 bytes] [address 32 bytes] [amount 32 bytes]
+                        const input = tx.input?.toLowerCase();
+                        const isTransferMethod = input?.startsWith('0xa9059cbb');
 
-                        return isToMerchant && isCorrectAmount && isValueTransfer;
+                        if (isToUSDC && isTransferMethod && input.length >= 138) {
+                            // C: Decode Recipient (Remove '0x' + 8 chars method ID + 24 chars padding = 34 chars)
+                            // The address is located in the first 32-byte word (64 hex chars), 
+                            // but addresses are only 20 bytes (40 hex chars), so we look at the end of that word.
+                            // Indices: 0x(0-2) + Method(2-10) + Padding(10-34) + Address(34-74)
+                            const recipientInInput = "0x" + input.slice(34, 74);
+                            
+                            // D: Decode Amount (The next 32 bytes / 64 hex chars)
+                            const amountHex = "0x" + input.slice(74, 138);
+                            const amountVal = BigInt(amountHex);
+
+                            const isToMerchant = recipientInInput === CONFIG.MERCHANT_ADDRESS;
+                            const isCorrectAmount = amountVal >= requiredValue;
+
+                            return isToMerchant && isCorrectAmount;
+                        }
+                        return false;
                     });
 
                     if (foundTx) {
-                        console.log(`[Web3 Watcher] Success: Transaction ${foundTx.hash} found in block ${i}`);
+                        console.log(`[Web3 Watcher] Success: USDC Transfer ${foundTx.hash} found in block ${i}`);
                         handlePaymentSuccess(foundTx.hash);
                         return;
                     }
                 }
 
             } catch (error) {
-                console.error("Error polling blockchain or fetching blocks:", error);
+                console.error("Error polling blockchain:", error);
             }
         };
 
         if (view === 'payment') {
-            // Poll every 3 seconds 
             intervalId = setInterval(checkRecentBlocks, 3000); 
         }
 
@@ -484,7 +505,7 @@ export default function PaymentApp() {
                                 {isLoading ? "Connecting..." : "Connect USB"}
                             </button>
                         )}
-                        {/* Disconnect Button (Hidden by the parent div's class when connected, but keeping original logic for completeness) */}
+                        {/* Disconnect Button */}
                         {isConnected && (
                             <button
                                 onClick={disconnectFromArduino}
@@ -535,7 +556,7 @@ export default function PaymentApp() {
                             
                             className="group relative px-8 py-4 bg-black border border-emerald-500 hover:bg-emerald-900 text-emerald-500 rounded-xl font-bold text-xl transition-all transform hover:scale-105 active:scale-95"
                         >
-                            <span>Pay {CONFIG.REQUIRED_AMOUNT} ETH Base Sepolia </span>
+                            <span>Pay {CONFIG.REQUIRED_AMOUNT} USDC Base Sepolia </span>
                         </button>
                         
                         {/* Display Serial Trigger Status */}
@@ -587,7 +608,7 @@ export default function PaymentApp() {
                         </div>
 
                         <p className="text-slate-600 font-medium mb-2">
-                            Send exactly: <span className="text-emerald-600 font-bold text-lg">{CONFIG.REQUIRED_AMOUNT} ETH</span>
+                            Send exactly: <span className="text-emerald-600 font-bold text-lg">{CONFIG.REQUIRED_AMOUNT} USDC</span>
                         </p>
                         <p className="text-xs text-slate-400 mb-6">
                             On Base Sepolia Network
