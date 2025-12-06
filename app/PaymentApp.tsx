@@ -4,8 +4,11 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { RefreshCw, AlertCircle } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { usePublicClient } from 'wagmi';
-import { parseUnits } from 'viem'; // Changed from parseEther to parseUnits for USDC decimals
+import { parseUnits } from 'viem'; 
 import { baseSepolia } from 'wagmi/chains';
+
+// --- NEW IMPORTS ---
+import { mintReceiptNFT } from '@/utils/mintAction'; // Adjust path based on where you put the file
 
 // Define the SerialPort type globally for TypeScript compatibility
 declare global {
@@ -92,8 +95,6 @@ export default function PaymentApp() {
     const publicClient = usePublicClient();
 
     // --- QR CODE GENERATION (UPDATED FOR USDC TOKEN) ---
-    // Format: ethereum:<contract_address>/transfer?address=<recipient>&uint256=<amount_in_smallest_unit>
-    // Note: USDC has 6 decimals.
     const usdcAmountInSmallestUnit = parseUnits(CONFIG.REQUIRED_AMOUNT.toString(), 6).toString();
     
     const paymentURI = `ethereum:${CONFIG.USDC_CONTRACT_ADDRESS}@${baseSepolia.id}/transfer?address=${CONFIG.MERCHANT_ADDRESS}&uint256=${usdcAmountInSmallestUnit}`;
@@ -113,13 +114,13 @@ export default function PaymentApp() {
     const sendCommand = useCallback(
         async (command: string) => {
             if (!port || !writer || !isConnected) {
-                setError("Arduino not connected. Please connect the device.");
+                // Not throwing error to UI to avoid disrupting flow if relay is secondary
+                console.warn("Arduino not connected. Command skipped:", command);
                 return;
             }
 
             try {
-                setIsLoading(true);
-                setError(null);
+                // Don't set global loading state here to avoid re-renders during active flow
                 const encoder = new TextEncoder();
                 const data = encoder.encode(command + "\n");
                 await writer.write(data);
@@ -127,25 +128,20 @@ export default function PaymentApp() {
             } catch (err) {
                 setIsConnected(false);
                 setError(err instanceof Error ? err.message : "Failed to send command to Arduino");
-            } finally {
-                setIsLoading(false);
-            }
+            } 
         },
         [port, writer, isConnected],
     );
-    
-    // NOTE: This helper is only kept for clarity.
-    const operateRelay = useCallback(async () => {
-        await sendCommand(CONFIG.RELAY_COMMAND);
-    }, [sendCommand]);
 
-
-    const handlePaymentSuccess = useCallback((hash: string) => { 
+    // --- MODIFIED: SUCCESS HANDLER WITH MINTING ---
+    const handlePaymentSuccess = useCallback(async (hash: string, payerAddress: string) => { 
         setTxHash(hash);
         setView('success');
         setSuccessPhase('timer'); 
 
-        // Trigger relay directly when audio starts
+        console.log(`[Success] Payment confirmed from ${payerAddress}. Processing actions...`);
+
+        // 1. TRIGGER AUDIO & PHYSICAL RELAY
         if (audioRef.current) {
             audioRef.current.currentTime = 0;
             const playPromise = audioRef.current.play();
@@ -154,8 +150,6 @@ export default function PaymentApp() {
                 if (isConnected) {
                     console.log("Payment confirmed. Triggering Arduino relay operation.");
                     sendCommand(CONFIG.RELAY_COMMAND); 
-                } else {
-                    console.warn("Payment confirmed, but Arduino is not connected. Relay command skipped.");
                 }
             };
 
@@ -168,6 +162,14 @@ export default function PaymentApp() {
                 relayAction();
             }
         }
+
+        // 2. NEW: MINT NFT (Fire and forget - don't await blocking the UI)
+        mintReceiptNFT(CONFIG.MERCHANT_ADDRESS, payerAddress).then(() => {
+            console.log("[NFT] Minting process initiated successfully.");
+        }).catch(err => {
+            console.error("[NFT] Minting failed silently:", err);
+        });
+
     }, [isConnected, sendCommand]);
 
     const disconnectFromArduino = useCallback(async () => {
@@ -252,8 +254,6 @@ export default function PaymentApp() {
     }, []);
 
     // --- ARDUINO/WEB SERIAL EFFECTS ---
-
-    // 1. Auto-Connect and Disconnect Listener
     useEffect(() => {
         if (typeof navigator === "undefined" || !("serial" in navigator)) return;
 
@@ -282,7 +282,6 @@ export default function PaymentApp() {
         }
     }, [connectToArduino, autoConnectAttempted]);
 
-    // 2. Continuous Serial Data Reader
     useEffect(() => {
         let loop = true;
 
@@ -402,7 +401,7 @@ export default function PaymentApp() {
     }, [view, publicClient]);
 
 
-    // --- BLOCKCHAIN WATCHER (MODIFIED FOR USDC) ---
+    // --- BLOCKCHAIN WATCHER (MODIFIED TO EXTRACT PAYER) ---
     useEffect(() => {
         let intervalId: NodeJS.Timeout;
 
@@ -411,7 +410,6 @@ export default function PaymentApp() {
 
             try {
                 const currentBlock = await publicClient.getBlockNumber();
-                // 1. Calculate required amount in BigInt (USDC has 6 decimals)
                 const requiredValue = parseUnits(CONFIG.REQUIRED_AMOUNT.toString(), 6);
                 
                 const maxBlocksToSearch = 10n;
@@ -424,24 +422,16 @@ export default function PaymentApp() {
                         includeTransactions: true
                     });
 
-                    // 2. SEARCH FOR USDC TRANSFER TRANSACTIONS
+                    // SEARCH FOR USDC TRANSFER TRANSACTIONS
                     const foundTx = block.transactions.find((tx: any) => {
-                        // A: Check if tx is interacting with USDC Contract
                         const isToUSDC = tx.to?.toLowerCase() === CONFIG.USDC_CONTRACT_ADDRESS;
                         
-                        // B: Check if input data is a 'transfer' function (0xa9059cbb)
-                        // Input layout: [method_id 4 bytes] [address 32 bytes] [amount 32 bytes]
                         const input = tx.input?.toLowerCase();
                         const isTransferMethod = input?.startsWith('0xa9059cbb');
 
                         if (isToUSDC && isTransferMethod && input.length >= 138) {
-                            // C: Decode Recipient (Remove '0x' + 8 chars method ID + 24 chars padding = 34 chars)
-                            // The address is located in the first 32-byte word (64 hex chars), 
-                            // but addresses are only 20 bytes (40 hex chars), so we look at the end of that word.
-                            // Indices: 0x(0-2) + Method(2-10) + Padding(10-34) + Address(34-74)
                             const recipientInInput = "0x" + input.slice(34, 74);
                             
-                            // D: Decode Amount (The next 32 bytes / 64 hex chars)
                             const amountHex = "0x" + input.slice(74, 138);
                             const amountVal = BigInt(amountHex);
 
@@ -455,7 +445,12 @@ export default function PaymentApp() {
 
                     if (foundTx) {
                         console.log(`[Web3 Watcher] Success: USDC Transfer ${foundTx.hash} found in block ${i}`);
-                        handlePaymentSuccess(foundTx.hash);
+                        
+                        // EXTRACT PAYER ADDRESS FROM TRANSACTION
+                        // foundTx.from is standard in viem/wagmi transaction objects
+                        const payerAddress = foundTx.from;
+                        
+                        handlePaymentSuccess(foundTx.hash, payerAddress);
                         return;
                     }
                 }
@@ -475,6 +470,7 @@ export default function PaymentApp() {
     const isWebSerialSupported = typeof navigator !== "undefined" && "serial" in navigator;
 
     // --- Component Rendering ---
+    // (NO CHANGES TO JSX RENDERING FROM YOUR ORIGINAL CODE)
     return (
         <div className="min-h-screen bg-black text-white font-sans selection:bg-emerald-500 selection:text-white relative overflow-hidden">
             
