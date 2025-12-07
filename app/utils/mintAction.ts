@@ -1,6 +1,6 @@
 import { createWalletClient, http, publicActions } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
-import { baseSepolia } from 'viem/chains';
+import { base } from 'viem/chains';
 import { RECEIPT_CONTRACT_ADDRESS, RECEIPT_ABI } from './receiptContract';
 
 // 1. Setup the Hot Wallet Account
@@ -11,7 +11,7 @@ const account = privateKey ? privateKeyToAccount(privateKey) : null;
 const walletClient = account 
   ? createWalletClient({
       account,
-      chain: baseSepolia,
+      chain: base,
       transport: http()
     }).extend(publicActions)
   : null;
