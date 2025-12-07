@@ -553,23 +553,27 @@ export default function PaymentApp() {
             className="group relative px-8 py-4 bg-black border border-emerald-500 hover:bg-emerald-900 text-emerald-500 rounded-xl font-bold text-xl transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center gap-3 mx-auto"
         >
             {/* USDC OFFICIAL ICON (Inline SVG) */}
-            <svg 
-                width="28" 
-                height="28" 
-                viewBox="0 0 24 24" 
-                fill="none" 
-                xmlns="http://www.w3.org/2000/svg"
-                className="shrink-0 rounded-full"
-            >
-                {/* 1. The Solid Brand Blue Background */}
-                <circle cx="12" cy="12" r="12" fill="#2775CA"/>
-                
-                {/* 2. The White Block Dollar Sign */}
-                <path 
-                    d="M12.75 16.5V18H11.25V16.5H8.25V13.5H12.75V12H9C8.17157 12 7.5 11.3284 7.5 10.5V7.5C7.5 6.67157 8.17157 6 9 6H11.25V4.5H12.75V6H15.75V9H11.25V10.5H15C15.8284 10.5 16.5 11.1716 16.5 12V15C16.5 15.8284 15.8284 16.5 15 16.5H12.75Z" 
-                    fill="white"
-                />
-            </svg>            
+               <svg 
+        width="28" 
+        height="28" 
+        viewBox="0 0 32 32" 
+        fill="none" 
+        xmlns="http://www.w3.org/2000/svg"
+        className="shrink-0 rounded-full bg-white" /* White bg optional, but keeps edges crisp */
+    >
+        {/* 1. The Blue Circle Background */}
+        <circle cx="16" cy="16" r="16" fill="#2775CA"/>
+        
+        {/* 2. The White Brackets & Dollar Sign */}
+        <path 
+            fillRule="evenodd" 
+            clipRule="evenodd" 
+            d="M17.22 21.5H14.78C13.25 21.5 12 20.25 12 18.72V18.5C12 18.22 12.22 18 12.5 18H13C13.28 18 13.5 18.22 13.5 18.5V18.72C13.5 19.7 14.3 20.5 15.28 20.5H17.72C18.7 20.5 19.5 19.7 19.5 18.72C19.5 17.93 18.97 17.23 18.21 17.01L14.52 15.96C12.83 15.61 12 14.51 12 13.28C12 11.75 13.25 10.5 14.78 10.5H17.22C18.75 10.5 20 11.75 20 13.28V13.5C20 13.78 19.78 14 19.5 14H19C18.72 14 18.5 13.78 18.5 13.5V13.28C18.5 12.3 17.7 11.5 16.72 11.5H14.28C13.3 11.5 12.5 12.3 12.5 13.28C12.5 14.07 13.03 14.77 13.79 14.99L17.48 16.04C19.17 16.39 20 17.49 20 18.72C20 20.25 18.75 21.5 17.22 21.5ZM16 23.5C15.72 23.5 15.5 23.28 15.5 23V21C15.5 20.72 15.72 20.5 16 20.5C16.28 20.5 16.5 20.72 16.5 21V23C16.5 23.28 16.28 23.5 16 23.5ZM16 11.5C15.72 11.5 15.5 11.28 15.5 11V9C15.5 8.72 15.72 8.5 16 8.5C16.28 8.5 16.5 8.72 16.5 9V11C16.5 11.28 16.28 11.5 16 11.5ZM12.5 26.39C12.44 26.39 12.39 26.38 12.33 26.36C7.95 24.81 5 20.64 5 16C5 11.36 7.95 7.19 12.33 5.64C12.59 5.55 12.87 5.68 12.97 5.94C13.06 6.2 12.93 6.49 12.67 6.58C8.68 7.99 6 11.78 6 16C6 20.22 8.68 24.01 12.67 25.42C12.93 25.51 13.07 25.8 12.97 26.06C12.9 26.26 12.71 26.39 12.5 26.39ZM19.5 26.39C19.29 26.39 19.1 26.26 19.03 26.06C18.93 25.8 19.07 25.51 19.33 25.42C23.32 24.01 26 20.22 26 16C26 11.78 23.32 7.99 19.33 6.58C19.07 6.49 18.94 6.2 19.03 5.94C19.13 5.68 19.41 5.55 19.67 5.64C24.05 7.19 27 11.36 27 16C27 20.64 24.05 24.81 19.67 26.36C19.61 26.38 19.56 26.39 19.5 26.39Z" 
+            fill="white"
+        />
+    </svg>
+            
+            
             <span>Pay {CONFIG.REQUIRED_AMOUNT} USDC Base Sepolia </span>
         </button>
         
