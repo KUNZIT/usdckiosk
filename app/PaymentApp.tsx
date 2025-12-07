@@ -557,7 +557,7 @@ export default function PaymentApp() {
                 width="28" 
                 height="28" 
                 viewBox="0 0 1024 1024" 
-                className="rounded-full bg-white" /* Added bg-white so the blue icon pops against black button */
+                className="rounded-full " /* Added bg-white so the blue icon pops against black button */
                 fill="none" 
                 xmlns="http://www.w3.org/2000/svg"
             >
