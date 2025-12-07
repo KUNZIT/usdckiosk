@@ -5,7 +5,7 @@ import { RefreshCw, AlertCircle } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { usePublicClient } from 'wagmi';
 import { parseUnits } from 'viem'; 
-import { baseSepolia } from 'wagmi/chains';
+import { base } from 'wagmi/chains';
 
 
 import { mintReceiptNFT } from './utils/mintAction'; 
@@ -97,7 +97,7 @@ export default function PaymentApp() {
     // --- QR CODE GENERATION 
     const usdcAmountInSmallestUnit = parseUnits(CONFIG.REQUIRED_AMOUNT.toString(), 6).toString();
     
-    const paymentURI = `ethereum:${CONFIG.USDC_CONTRACT_ADDRESS}@${baseSepolia.id}/transfer?address=${CONFIG.MERCHANT_ADDRESS}&uint256=${usdcAmountInSmallestUnit}`;
+    const paymentURI = `ethereum:${CONFIG.USDC_CONTRACT_ADDRESS}@${base.id}/transfer?address=${CONFIG.MERCHANT_ADDRESS}&uint256=${usdcAmountInSmallestUnit}`;
 
     // --- UTILITY FUNCTIONS ---
 
@@ -585,7 +585,7 @@ export default function PaymentApp() {
             </svg>
 
 
-            <span>Pay {CONFIG.REQUIRED_AMOUNT} USDC Base Sepolia </span>
+            <span>Pay {CONFIG.REQUIRED_AMOUNT} USDC Base Network </span>
         </button>
 
         {/* Display Serial Trigger Status */}
@@ -639,7 +639,7 @@ export default function PaymentApp() {
                             Send exactly: <span className="text-emerald-600 font-bold text-lg">{CONFIG.REQUIRED_AMOUNT} USDC</span>
                         </p>
                         <p className="text-xs text-slate-400 mb-6">
-                            On Base Sepolia Network
+                            On Base Mainnet
                         </p>
 
                         <div className="flex justify-center items-center gap-2 text-emerald-600 animate-pulse text-sm font-semibold mb-6">
