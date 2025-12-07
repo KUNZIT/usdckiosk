@@ -2,8 +2,10 @@
 
 
 
-💧 Crypto Water Dispenser (USDC on Base Sepolia)
-A decentralized vending machine application. 
+💧 Crypto Water Dispenser 
+
+A decentralized vending machine application.
+
 This project bridges the gap between blockchain payments and physical hardware using the Web Serial API.
 
 It detects USDC payments on Base Sepolia, triggers an Arduino Leonardo to dispense exactly 250ml of water,
