@@ -554,23 +554,22 @@ export default function PaymentApp() {
         >
             {/* USDC OFFICIAL ICON (Inline SVG) */}
             <svg 
-        width="28" 
-        height="28" 
-        viewBox="0 0 24 24" 
-        fill="none" 
-        xmlns="http://www.w3.org/2000/svg"
-        className="shrink-0 rounded-full" /* shrink-0 prevents squishing on mobile */
-    >
-        {/* Official Circle Blue Background */}
-        <circle cx="12" cy="12" r="12" fill="#2775CA"/>
-        
-        {/* The "Block" Dollar Sign (Modern) */}
-        <path 
-            d="M12.75 16.5V18H11.25V16.5H8.25V13.5H12.75V12H9C8.17157 12 7.5 11.3284 7.5 10.5V7.5C7.5 6.67157 8.17157 6 9 6H11.25V4.5H12.75V6H15.75V9H11.25V10.5H15C15.8284 10.5 16.5 11.1716 16.5 12V15C16.5 15.8284 15.8284 16.5 15 16.5H12.75Z" 
-            fill="white"
-        />
-    </svg>
-            
+                width="28" 
+                height="28" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                xmlns="http://www.w3.org/2000/svg"
+                className="shrink-0 rounded-full"
+            >
+                {/* 1. The Solid Brand Blue Background */}
+                <circle cx="12" cy="12" r="12" fill="#2775CA"/>
+                
+                {/* 2. The White Block Dollar Sign */}
+                <path 
+                    d="M12.75 16.5V18H11.25V16.5H8.25V13.5H12.75V12H9C8.17157 12 7.5 11.3284 7.5 10.5V7.5C7.5 6.67157 8.17157 6 9 6H11.25V4.5H12.75V6H15.75V9H11.25V10.5H15C15.8284 10.5 16.5 11.1716 16.5 12V15C16.5 15.8284 15.8284 16.5 15 16.5H12.75Z" 
+                    fill="white"
+                />
+            </svg>            
             <span>Pay {CONFIG.REQUIRED_AMOUNT} USDC Base Sepolia </span>
         </button>
         
