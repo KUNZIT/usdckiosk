@@ -1,7 +1,5 @@
-<<<<<<< HEAD
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+<img width="1265" height="923" alt="waterDispenser" src="https://github.com/user-attachments/assets/f1592919-1b37-4e09-bb63-1830c6f24d35" />
 
-## Getting Started
 
 First, run the development server:
 
