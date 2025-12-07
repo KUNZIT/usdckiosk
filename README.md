@@ -86,8 +86,7 @@ Your Arduino must be programmed to handle the following serial protocol at 9600 
 <img width="658" height="1141" alt="sketch" src="https://github.com/user-attachments/assets/8c79c031-58cb-454c-ac8d-bde8cb986710" />
 
 
-
-
+Upload via Arduino IDE : 
 
 
 
