@@ -547,19 +547,20 @@ export default function PaymentApp() {
             DRINKING WATER Dispenser
         </h1>
 
-        {/* --- NEWLY ADDED IMAGE --- */}
-        {/* Assuming logo.jpg is in the root of the 'public' folder */}
+        
         <img
             src="/logo.jpg"
             alt="Water Dispenser Logo"
-            /* Added styling: centered, width constraint, rounded corners, shadow */
             className="mx-auto w-64 h-auto rounded-2xl border-2 border-emerald-500/20"
         />
-        {/* ------------------------- */}
+
+        <p className="text-5xl font-bold text-blue-400 -mt-4">
+            250ml of water
+        </p>        
 
         <button
             onClick={() => setView('payment')}
-            /* Added 'flex', 'items-center', 'justify-center', and 'gap-3' to align icon and text */
+            
             className="group relative px-8 py-4 bg-black border border-emerald-500 hover:bg-emerald-900 text-emerald-500 rounded-xl font-bold text-xl transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center gap-3 mx-auto"
         >
             {/* USDC OFFICIAL ICON (Inline SVG - Classic Version) */}
