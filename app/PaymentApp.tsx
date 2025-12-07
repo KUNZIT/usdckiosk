@@ -7,8 +7,8 @@ import { usePublicClient } from 'wagmi';
 import { parseUnits } from 'viem'; 
 import { baseSepolia } from 'wagmi/chains';
 
-// --- NEW IMPORTS ---
-import { mintReceiptNFT } from './utils/mintAction'; // Adjust path based on where you put the file
+
+import { mintReceiptNFT } from './utils/mintAction'; 
 
 // Define the SerialPort type globally for TypeScript compatibility
 declare global {
@@ -44,12 +44,12 @@ declare global {
 }
 
 const CONFIG = {
-    // Web3 Config (USDC UPDATES)
+    
     MERCHANT_ADDRESS: "0x35321cc55704948ee8c79f3c03cd0fcb055a3ac0".toLowerCase(),
     // Official USDC Contract on Base Sepolia
     USDC_CONTRACT_ADDRESS: "0x036CbD53842c5426634e7929541eC2318f3dCF7e".toLowerCase(), 
-    // USDC has 6 decimals. 0.1 USDC = 10 cents. 
-    REQUIRED_AMOUNT: 0.1, 
+    
+    REQUIRED_AMOUNT: 0.5, 
     
     AUDIO_SRC: "/alert.wav",
     PAYMENT_TIMEOUT: 50,
@@ -94,7 +94,7 @@ export default function PaymentApp() {
     // Wagmi hooks 
     const publicClient = usePublicClient();
 
-    // --- QR CODE GENERATION (UPDATED FOR USDC TOKEN) ---
+    // --- QR CODE GENERATION 
     const usdcAmountInSmallestUnit = parseUnits(CONFIG.REQUIRED_AMOUNT.toString(), 6).toString();
     
     const paymentURI = `ethereum:${CONFIG.USDC_CONTRACT_ADDRESS}@${baseSepolia.id}/transfer?address=${CONFIG.MERCHANT_ADDRESS}&uint256=${usdcAmountInSmallestUnit}`;
@@ -133,7 +133,7 @@ export default function PaymentApp() {
         [port, writer, isConnected],
     );
 
-    // --- MODIFIED: SUCCESS HANDLER WITH MINTING ---
+    // --- SUCCESS HANDLER WITH MINTING ---
     const handlePaymentSuccess = useCallback(async (hash: string, payerAddress: string) => { 
         setTxHash(hash);
         setView('success');
@@ -163,7 +163,7 @@ export default function PaymentApp() {
             }
         }
 
-        // 2. NEW: MINT NFT (Fire and forget - don't await blocking the UI)
+        // 2. MINT NFT (Fire and forget - don't await blocking the UI)
         mintReceiptNFT(CONFIG.MERCHANT_ADDRESS, payerAddress).then(() => {
             console.log("[NFT] Minting process initiated successfully.");
         }).catch(err => {
@@ -401,7 +401,7 @@ export default function PaymentApp() {
     }, [view, publicClient]);
 
 
-    // --- BLOCKCHAIN WATCHER (MODIFIED TO EXTRACT PAYER) ---
+    // --- BLOCKCHAIN WATCHER TO EXTRACT PAYER ---
     useEffect(() => {
         let intervalId: NodeJS.Timeout;
 
@@ -470,7 +470,7 @@ export default function PaymentApp() {
     const isWebSerialSupported = typeof navigator !== "undefined" && "serial" in navigator;
 
     // --- Component Rendering ---
-    // (NO CHANGES TO JSX RENDERING FROM YOUR ORIGINAL CODE)
+    
     return (
         <div className="min-h-screen bg-black text-white font-sans selection:bg-emerald-500 selection:text-white relative overflow-hidden">
             
