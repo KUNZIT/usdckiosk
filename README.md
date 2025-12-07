@@ -62,11 +62,12 @@ Dispense
 
 
  🔌 Hardware Requirements & Setup
-1. The Hardware
-2. 
-Microcontroller: Arduino Leonardo .
+
+Microcontroller: Arduino Leonardo.
 
 5V Relay Module controlling a 12V Water Pump.
+
+Infrared sensor "Flying Fish"
 
 mini USB Cable to the PC.
 
@@ -110,11 +111,13 @@ Click "Connect USB" in the top right corner to pair your Arduino Leonardo.
 You can modify the CONFIG object in PaymentApp.tsx to change pricing or addresses:
 
 const CONFIG = {
+
     MERCHANT_ADDRESS: "0x...", // Where money goes & where NFTs are stored
+    
     USDC_CONTRACT_ADDRESS: "0x...", // USDC on Base Sepolia
+    
     REQUIRED_AMOUNT: 0.5, // Cost of water
-    PAYMENT_TIMEOUT: 50, // Seconds before reset
-    BAUD_RATE: 9600, // Serial speed
+    
 };
 
 
