@@ -82,21 +82,18 @@ mini USB Cable to the PC.
 2. The Arduino Sketch (Protocol)
 Your Arduino must be programmed to handle the following serial protocol at 9600 Baud:
 
-Receiving:
+const int RELAY_PIN = 2; // Connect relay to digital pin 2
+const int BUTTON PIN = 4; // Connect physical button (input) to digital pin 4RELAY_ON: Turn on the pump relay.
 
-RELAY_ON: Turn on the pump relay.
-
-RELAY_AUTO_OFF: (Optional) Turn off relay if handled via software signal.
+RELAY_AUTO_OFF:  Turn off relay timer.
 
 Sending:
 
 BUTTON_4_PRESSED: Triggers the UI to move from Landing to Payment view.
 
-RELAY_ON_OK: Confirms relay activation.
 
 
 
-<img width="848" height="1203" alt="sketch" src="https://github.com/user-attachments/assets/110735ef-73b0-4300-b677-efffae141826" />
 
 
 
