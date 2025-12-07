@@ -8,7 +8,7 @@ A decentralized vending machine application.
 
 This project bridges the gap between blockchain payments and physical hardware using the Web Serial API.
 
-It detects USDC payments on Base Sepolia, triggers an Arduino Leonardo to dispense exactly 250ml of water,
+It detects USDC payments on Base Mainnet Network , triggers an Arduino Leonardo to dispense exactly 250ml of water,
 and mints a "Shadow Receipt" NFT to the merchant's vault for on-chain loyalty tracking and future user rewards.
 
 
@@ -19,7 +19,7 @@ Key Features
 
 2. Direct communication between the Chrome Browser and Arduino Leonardo without backend servers (Client-side logic).
 
-3. Real-time monitoring of the Base Sepolia blockchain for incoming transactions.
+3. Real-time monitoring of the Base blockchain for incoming transactions.
 
 4. Mints an NFT receipt to the merchant containing the payer's data. This creates an on-chain ledger for cashback programs or "Random Rewards" without cluttering the user's wallet.
 
@@ -30,7 +30,7 @@ Key Features
 
 Frontend: React, Tailwind CSS, Lucide React
 
-Blockchain: Wagmi, Viem (Base Sepolia Chain)
+Blockchain: Wagmi, Viem (Base Chain)
 
 Hardware Interface: Web Serial API (Native Browser Support)
 
@@ -51,7 +51,7 @@ The app begins polling the blockchain for a transfer of 0.5 USDC to the configur
 
 Verification
 
-Once a valid transaction hash is detected on Base Sepolia, the payment is confirmed.
+Once a valid transaction hash is detected on Base Network, the payment is confirmed.
 
 Dispense
 
@@ -106,7 +106,7 @@ const CONFIG = {
 
     MERCHANT_ADDRESS: "0x...", // Where money goes & where NFTs are stored
     
-    USDC_CONTRACT_ADDRESS: "0x...", // USDC on Base Sepolia
+    USDC_CONTRACT_ADDRESS: "0x...", // USDC on Base Mainnet
     
     REQUIRED_AMOUNT: 0.5, // Cost of water
     
