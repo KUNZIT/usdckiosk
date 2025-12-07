@@ -46,8 +46,8 @@ declare global {
 const CONFIG = {
     
     MERCHANT_ADDRESS: "0x35321cc55704948ee8c79f3c03cd0fcb055a3ac0".toLowerCase(),
-    // Official USDC Contract on Base Sepolia
-    USDC_CONTRACT_ADDRESS: "0x036CbD53842c5426634e7929541eC2318f3dCF7e".toLowerCase(), 
+    // Official USDC Contract on Base Mainnet
+    USDC_CONTRACT_ADDRESS: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913".toLowerCase(), 
     
     REQUIRED_AMOUNT: 0.5, 
     
