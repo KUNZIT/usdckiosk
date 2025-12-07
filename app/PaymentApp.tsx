@@ -540,38 +540,53 @@ export default function PaymentApp() {
             {/* MAIN CONTENT AREA */}
             <main className="flex flex-col items-center justify-center min-h-screen p-6">
 
-                {/* VIEW: LANDING */}
-                {view === 'landing' && (
-                    <div className="text-center space-y-8 animate-fade-in">
-                        <h1 className="text-5xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-blue-400">
-                            DRINKING WATER Dispenser
-                        </h1>
+{/* VIEW: LANDING */}
+{view === 'landing' && (
+    <div className="text-center space-y-8 animate-fade-in">
+        <h1 className="text-5xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-blue-400">
+            DRINKING WATER Dispenser
+        </h1>
 
-                        <button
-                            onClick={() => setView('payment')}
-                            
-                            className="group relative px-8 py-4 bg-black border border-emerald-500 hover:bg-emerald-900 text-emerald-500 rounded-xl font-bold text-xl transition-all transform hover:scale-105 active:scale-95"
-                        >
-                            <span>Pay {CONFIG.REQUIRED_AMOUNT} USDC Base Sepolia </span>
-                        </button>
-                        
-                        {/* Display Serial Trigger Status */}
-                        {isConnected && (
+        <button
+            onClick={() => setView('payment')}
+            /* Added 'flex', 'items-center', 'justify-center', and 'gap-3' to align icon and text */
+            className="group relative px-8 py-4 bg-black border border-emerald-500 hover:bg-emerald-900 text-emerald-500 rounded-xl font-bold text-xl transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center gap-3 mx-auto"
+        >
+            {/* USDC OFFICIAL ICON (Inline SVG) */}
+            <svg 
+                width="28" 
+                height="28" 
+                viewBox="0 0 1024 1024" 
+                className="rounded-full bg-white" /* Added bg-white so the blue icon pops against black button */
+                fill="none" 
+                xmlns="http://www.w3.org/2000/svg"
+            >
+                <path d="M512 1024C794.773 1024 1024 794.773 1024 512C1024 229.227 794.773 0 512 0C229.227 0 0 229.227 0 512C0 794.773 229.227 1024 512 1024Z" fill="#2775CA"/>
+                <path d="M512 153.6C709.973 153.6 870.4 314.027 870.4 512C870.4 709.973 709.973 870.4 512 870.4C314.027 870.4 153.6 709.973 153.6 512C153.6 314.027 314.027 153.6 512 153.6Z" fill="white"/>
+                <path d="M552.96 686.08H506.88V639.147C455.68 635.733 421.547 613.547 416.427 568.32L473.6 560.64C476.16 587.093 490.667 600.747 523.093 600.747C555.52 600.747 570.88 587.947 570.88 565.76C570.88 543.573 553.813 533.333 509.44 522.24C454.827 508.587 421.547 490.667 421.547 448.853C421.547 413.867 451.413 389.973 506.88 385.707V341.333H552.96V386.56C590.507 391.68 616.96 411.307 622.08 447.147L566.613 454.827C564.053 434.347 552.107 422.4 527.36 422.4C499.2 422.4 482.987 433.493 482.987 453.12C482.987 472.747 499.2 482.133 544.427 493.227C602.453 507.733 632.32 529.067 632.32 562.347C632.32 602.453 600.747 630.613 552.96 637.44V686.08Z" fill="#2775CA"/>
+            </svg>
 
- <p className="text-sm text-emerald-400">
-                                
-                            </p>                        
-                        )}
+            <span>Pay {CONFIG.REQUIRED_AMOUNT} USDC Base Sepolia </span>
+        </button>
+        
+        {/* Display Serial Trigger Status */}
+        {isConnected && (
+            <p className="text-sm text-emerald-400">
+                {/* Status text goes here */}
+            </p>
+        )}
 
-                        {error && (
-                            <div className="mt-4 text-sm text-red-400 bg-red-900/50 p-3 rounded-lg flex items-center justify-center gap-2">
-                                <AlertCircle size={18} />
-                                <span>{error}</span>
-                            </div>
-                        )}
-                    </div>
-                )}
+        {error && (
+            <div className="mt-4 text-sm text-red-400 bg-red-900/50 p-3 rounded-lg flex items-center justify-center gap-2">
+                <AlertCircle size={18} />
+                <span>{error}</span>
+            </div>
+        )}
+    </div>
+)}
 
+
+                
 
                 {/* VIEW: PAYMENT */}
                 {view === 'payment' && (
