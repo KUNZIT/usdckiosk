@@ -18,13 +18,13 @@ and mints a "Shadow Receipt" NFT to the merchant's vault for on-chain loyalty tr
 
 Key Features
 
-1.Instantly converts on-chain payments into physical actions (dispensing water).
+1. Instantly converts on-chain payments into physical actions (dispensing water).
 
-2. Direct communication between the Chrome Browser and Arduino Leonardo without backend servers (Client-side logic).
+2. Direct communication between the Chrome Browser and Arduino Leonardo.
 
 3. Real-time monitoring of the Base blockchain for incoming transactions.
 
-4. Mints an NFT receipt to the merchant containing the payer's data. This creates an on-chain ledger for cashback programs or "Random Rewards" without cluttering the user's wallet.
+4. Mints an NFT receipt to the merchant address containing the payer's data. This creates an on-chain ledger for cashback programs or "Random Rewards" without cluttering the user's wallet.
 
 5. React-based interface with QR code generation, payment timers, and fluid success animations.
    
