@@ -8,7 +8,7 @@ import { parseUnits } from 'viem';
 import { base } from 'wagmi/chains';
 
 
-import { mintReceiptNFT } from './utils/mintAction'; 
+import { mintReceiptNFT } from './actions/mintReceipt'; 
 
 // Define the SerialPort type globally for TypeScript compatibility
 declare global {
@@ -164,10 +164,23 @@ export default function PaymentApp() {
         }
 
         // 2. MINT NFT (Fire and forget - don't await blocking the UI)
-        mintReceiptNFT(CONFIG.MERCHANT_ADDRESS, payerAddress).then(() => {
-            console.log("[NFT] Minting process initiated successfully.");
-        }).catch(err => {
-            console.error("[NFT] Minting failed silently:", err);
+
+
+        
+        mintReceiptAction(CONFIG.MERCHANT_ADDRESS, payerAddress)
+    .then((result) => {
+        if (result.success) {
+            console.log("[NFT] Minting success:", result.hash);
+        } else {
+            console.error("[NFT] Minting failed:", result.error);
+        }
+    })
+    .catch(err => {
+        console.error("[NFT] Action call failed:", err);
+
+
+
+            
         });
 
     }, [isConnected, sendCommand]);
