@@ -8,7 +8,7 @@ import { parseUnits } from 'viem';
 import { base } from 'wagmi/chains';
 
 
-import { mintReceiptNFT } from './actions/mintReceipt'; 
+import { mintReceiptAction } from './actions/mintReceipt'; 
 
 // Define the SerialPort type globally for TypeScript compatibility
 declare global {
