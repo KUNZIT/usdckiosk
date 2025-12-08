@@ -79,7 +79,7 @@ export default function PaymentApp() {
     const [successTimeLeft, setSuccessTimeLeft] = useState(CONFIG.SUCCESS_TIMEOUT);
     const [startBlock, setStartBlock] = useState<bigint>(0n);
     const audioRef = useRef<HTMLAudioElement | null>(null);
-
+    const processedTxRef = useRef<string | null>(null);
     // Arduino/Web Serial State
     const [port, setPort] = useState<SerialPort | null>(null);
     const [isConnected, setIsConnected] = useState(false);
@@ -107,6 +107,8 @@ export default function PaymentApp() {
         setSuccessPhase('timer');
         setTimeLeft(CONFIG.PAYMENT_TIMEOUT);
         setSuccessTimeLeft(CONFIG.SUCCESS_TIMEOUT);
+        processedTxRef.current = null;
+        
     }, []);
 
     // --- ARDUINO/WEB SERIAL LOGIC ---
@@ -457,10 +459,22 @@ export default function PaymentApp() {
                     });
 
                     if (foundTx) {
-                        console.log(`[Web3 Watcher] Success: USDC Transfer ${foundTx.hash} found in block ${i}`);
+
+                    if (processedTxRef.current === foundTx.hash) {
+                            console.log("Skipping duplicate transaction processing");
+                            return; 
+                        }
+
                         
-                        // EXTRACT PAYER ADDRESS FROM TRANSACTION
-                        // foundTx.from is standard in viem/wagmi transaction objects
+                        processedTxRef.current = foundTx.hash;
+
+                       
+
+                        console.log(`[Web3 Watcher] Success: USDC Transfer ${foundTx.hash} found in block ${i}`);
+
+
+
+                        
                         const payerAddress = foundTx.from;
                         
                         handlePaymentSuccess(foundTx.hash, payerAddress);
