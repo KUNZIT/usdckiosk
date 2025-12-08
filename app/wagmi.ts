@@ -13,7 +13,7 @@ export const config = createConfig({
     storage: cookieStorage
   }),
   transports: {
-    [base.id]: http(process.env.NEXT_PUBLIC_RPC_URL)
+    [base.id]: http('/api/rpc')
   },
 });
 
