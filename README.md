@@ -76,7 +76,8 @@ Infrared sensor "Flying Fish"
 
 mini USB Cable to the PC.
 
-![hardware](https://github.com/user-attachments/assets/27e1b076-a87e-4312-bde8-3e9f072e47c1)
+![hardware](https://github.com/user-attachments/assets/4c17f278-75bf-4c1b-9b99-49140002c894)
+
 
 
 
@@ -85,8 +86,9 @@ mini USB Cable to the PC.
    
 Your Arduino must be programmed to handle the following serial protocol at 9600 Baud:
 
+<img width="658" height="1141" alt="sketch" src="https://github.com/user-attachments/assets/836d0915-797f-4840-8e34-57befbafbf3e" />
 
-<img width="658" height="1141" alt="sketch" src="https://github.com/user-attachments/assets/8c79c031-58cb-454c-ac8d-bde8cb986710" />
+
 
 
 Upload via Arduino IDE : 
