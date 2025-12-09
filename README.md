@@ -124,7 +124,7 @@ const CONFIG = {
 
 Arduino not connecting: Check if another app (like Arduino IDE) is hogging the COM port. The browser needs exclusive access.
 
-Payment not detected: Ensure the user is sending Base Sepolia USDC, not native ETH, and the amount matches REQUIRED_AMOUNT exactly.
+Payment not detected: Ensure the user is sending Base USDC, not native ETH, and the amount matches REQUIRED_AMOUNT exactly.
 
 
 ## Deploy on Vercel
