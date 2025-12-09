@@ -14,7 +14,7 @@ This project bridges the gap between blockchain payments and physical hardware u
 It detects USDC payments on Base Mainnet Network , triggers an Arduino Leonardo to dispense exactly 250ml of water,
 and mints a "Shadow Receipt" NFT to the merchant's vault for on-chain loyalty tracking and future user rewards.
 
-[app]https://usdckiosk.vercel.app/
+![app](https://usdckiosk.vercel.app/)
 
 Key Features
 
