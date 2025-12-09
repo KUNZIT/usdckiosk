@@ -516,7 +516,7 @@ export default function PaymentApp() {
                         {/* Status Text */}
                         <span className="text-xs font-semibold text-slate-300">
                             Arduino: {isConnected ? 'Connected' : isLoading ? 'Connecting...' : 'Disconnected'} 
-                            If you proceed with payment, water will NOT be dispensed
+                             - If you proceed with payment, water will NOT be dispensed
                         </span>
 
                         {/* Connection Button */}
