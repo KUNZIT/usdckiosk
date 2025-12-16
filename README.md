@@ -45,6 +45,7 @@ Device: Arduino Leonardo
 Landing
 
 The app displays a "Pay 0.5 USDC" button. It waits for user interaction via the touchscreen or a physical button connected to the Arduino (sending BUTTON_4_PRESSED).
+In the current version is used infrared sensor "Flying fish" to detect paper cup in the tray
 
 Payment Phase
 
