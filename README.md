@@ -135,6 +135,7 @@ Thank you for choosing our crypto payment method!
 Please follow these steps to get your drinking water
 
 1.  Preparation
+   
 Open your crypto wallet (e.g., MetaMask, Coinbase Wallet) on the Base Mainnet.
 
 Ensure you have the following minimum amounts:
