@@ -127,6 +127,39 @@ Arduino not connecting: Check if another app (like Arduino IDE) is hogging the C
 Payment not detected: Ensure the user is sending Base USDC, not native ETH, and the amount matches REQUIRED_AMOUNT exactly.
 
 
+##How to Use our Crypto-enabled Water Dispenser
+
+Dear Customers,
+
+Thank you for choosing our crypto payment method!
+Please follow these steps to get your drinking water
+
+1.  Preparation
+Open your crypto wallet (e.g., MetaMask, Coinbase Wallet) on the Base Mainnet.
+
+Ensure you have the following minimum amounts:
+•  0.5 USDC (on Base network)
+•  Ethereum (ETH) for gas fees (on Base network)
+
+2. Dispensing Process (Must be completed in 50 seconds)
+•  Put your paper cup into the dispenser tray.
+•  A QR code will immediately appear on the display.
+•  Open the scanning camera in your crypto wallet.
+•  Scan the QR code quickly.
+•  A transaction request will appear in your wallet.
+•  Crucially, confirm that you are transferring EXACTLY 0.5 USDC on the Base Network. (Payments for any other amount will not dispense water.)
+
+3.  Complete & Collect
+•  Wait for the on-screen message: "Here you are".
+•  Take your cup with water away from the dispenser tray.
+
+⚠️ Important Note on Timing
+•  The application session duration is 50 seconds. Please be quick to scan the QR code and confirm the transaction in your wallet.
+•  In case the session expires, or if you experience a network delay and the water is not dispensed after your payment is confirmed, please contact us immediately for a refund.
+
+Thank you for using our drinking water dispenser!
+
+
 ## Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
