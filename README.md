@@ -127,7 +127,7 @@ Arduino not connecting: Check if another app (like Arduino IDE) is hogging the C
 Payment not detected: Ensure the user is sending Base USDC, not native ETH, and the amount matches REQUIRED_AMOUNT exactly.
 
 
-##How to Use our Crypto-enabled Water Dispenser
+## How to Use our Crypto-enabled Water Dispenser
 
 Dear Customers,
 
